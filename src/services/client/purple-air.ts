@@ -1,5 +1,6 @@
-import { PurpleAirAccount, PurpleAirModel } from "db/models/air_account";
-import PurpleAirApi from "../../services/api/purple-air";
+
+import PurpleAirApi from "../../services/api/purple-air.js";
+import { PurpleAirAccount, PurpleAirModel } from "../../db/models/air_account.js";
 
 class PurpleAirClient  { 
 

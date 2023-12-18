@@ -1,5 +1,5 @@
 import mongoose, { mongo } from "mongoose";
-export const AirAccountSchema = new mongoose.Schema({
+ const AirAccountSchema = new mongoose.Schema({
   user_id: mongoose.Schema.Types.ObjectId,
   timestamp: Date,
   api_type: String,
@@ -54,3 +54,5 @@ export interface W3bStreamAccount extends IAirAccount {
 
 
 type API_TYPE = "purple-air" | "air-things" | "w3bstream"
+
+export default AirAccountSchema
