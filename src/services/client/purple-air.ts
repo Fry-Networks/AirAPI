@@ -13,8 +13,14 @@ class PurpleAirClient  {
             return;
         }
         const {api_key} = account;
+        console.log(api_key)
        const sensors = await PurpleAirApi.getSensorsDetails(api_key)
-        clients.set(ObjectId, api_key);
+       let sensorIds = sensors!.map(sensor => sensor[0]);
+       if(sensorIds.length > 0) { 
+            setInterval(PurpleAirApi.fetchSensorsInterval(sensorIds,ObjectId, api_key ), 3000000)
+
+       }
+       clients.set(ObjectId, api_key);
     }
 
     static async startDataSync (clients: Map<string, string>) {
@@ -35,7 +41,6 @@ class PurpleAirClient  {
     saveData (data: any) {
 
     }
-
 
 }
 

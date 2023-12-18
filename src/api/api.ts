@@ -69,7 +69,7 @@ app.post("/api/purple-air", async function (req, res) {
       api_key: data.api_key,
       user_id: user._id,
       timestamp: new Date(),
-      api_type: "ambient",
+      api_type: "purple-air",
     });
     await air_Account.save();
     airAccountsEvent.emit("newApiKey", air_Account._id);

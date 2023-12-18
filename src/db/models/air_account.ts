@@ -3,10 +3,7 @@ import mongoose, { mongo } from "mongoose";
   user_id: mongoose.Schema.Types.ObjectId,
   timestamp: Date,
   api_type: String,
-  info: {
-    type: String,
-    default: "",
-  },
+  devices: [String],
 });
 
 export const AirAccount = mongoose.model('air_accounts', AirAccountSchema);

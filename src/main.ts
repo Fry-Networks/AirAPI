@@ -30,19 +30,19 @@ const startApp = async () => {
   await PurpleAirClient.startDataSync(purpleAirClients);
   
 
-  // airAccountsEvent.on("newApiKey", async (ObjectId: string) => {
-  //   const account: IAirAccount | null =  await AirAccount.findById(ObjectId);
-  //   if (account?.api_type === "purple-air") {
-  //     await PurpleAirClient.createClient(purpleAirClients,account._id)
-  //   } 
-  // });
+  airAccountsEvent.on("newApiKey", async (ObjectId: string) => {
+    const account: IAirAccount | null =  await AirAccount.findById(ObjectId);
+    if (account?.api_type === "purple-air") {
+      await PurpleAirClient.createClient(purpleAirClients,account._id)
+    } 
+  });
 
-  // airAccountsEvent.on("deleteApiKey", async (ObjectId: string) => {
-  //   const account: IAirAccount | null =  await AirAccount.findById(ObjectId);
-  //   if (account?.api_type === "purple-air") {
-  //     clients.delete(ObjectId);
-  //   } 
-  // });
+  airAccountsEvent.on("deleteApiKey", async (ObjectId: string) => {
+    const account: IAirAccount | null =  await AirAccount.findById(ObjectId);
+    if (account?.api_type === "purple-air") {
+      clients.delete(ObjectId);
+    } 
+  });
 };
 
 
