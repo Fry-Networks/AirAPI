@@ -36,6 +36,7 @@ class PurpleAirClient  {
 
     }
 
+
 }
 
 export default PurpleAirClient;

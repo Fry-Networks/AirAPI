@@ -12,6 +12,24 @@ class PurpleAirApi {
             return response.data.data
         }
    }
+
+   static async isValidApiKey (API_KEY: string) {
+    console.log(API_KEY)
+    try {
+        const response = await axios.get<SensorsResponse>(`${this.url}/sensors?fields=name`, {
+            headers: {
+                'X-API-Key': API_KEY
+            }
+        });
+        if(response.status === 200) {
+            return true
+        }
+    }
+    catch(err) {
+        return false
+    }
+}
+
 }
 
 export default PurpleAirApi
