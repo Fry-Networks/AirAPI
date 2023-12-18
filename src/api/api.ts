@@ -2,7 +2,7 @@ import express from "express";
 import bodyparser from "body-parser";
 import axios from "axios";
 import { Ambientmodel, Ecowittmodel, WXMmodel, WeatherAccount } from "../db/models/weather_accounts.js";
-import { connect, newApiKeyEvent } from "../db/connect.js";
+import { connect, airAccountsEvent } from "../db/connect.js";
 import { rateLimit } from "express-rate-limit";
 import { getUserByAddress } from "../db/models/users-schema.js";
 const app = express();
@@ -35,7 +35,7 @@ app.get("/", function (req, res) {
   });
 });
 
-app.post("/api/submitkey", async function (req, res) {
+app.post("/api/airthings", async function (req, res) {
   try {
     const data: {
       key: string;
@@ -81,7 +81,7 @@ app.post("/api/submitkey", async function (req, res) {
       api_type: "ambient",
     });
     await key.save();
-    newApiKeyEvent.emit("newApiKey", key._id);
+    airAccountsEvent.emit("newApiKey", key._id);
 
     res.status(200).send({
       message:
@@ -220,7 +220,7 @@ app.post("/api/submitEcokey", async function (req, res) {
       app_key: data.app_key,
     });
     await key.save();
-    newApiKeyEvent.emit("newApiKey", key._id);
+    airAccountsEvent.emit("newApiKey", key._id);
 
     res.status(200).send({
       message:

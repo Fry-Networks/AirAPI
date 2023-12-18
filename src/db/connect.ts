@@ -25,17 +25,17 @@ export async function connect() {
 
 
     mongoose.connection.on('open', async () => {
-        const accountCollection = mongoose.connection.collection('weather_accounts');
+        const accountCollection = mongoose.connection.collection('air_accounts');
         const changeStream = accountCollection.watch();
         changeStream.on('change', (change) => {
             if (change.operationType === 'insert') {
-                newApiKeyEvent.emit('newApiKey', change.fullDocument._id);
+                airAccountsEvent.emit('newApiKey', change.fullDocument._id);
             }
             if (change.operationType === 'delete') {
-                newApiKeyEvent.emit('deleteApiKey', change.documentKey._id);
+                airAccountsEvent.emit('deleteApiKey', change.documentKey._id);
             }
         });
     });
 }
 
-export const newApiKeyEvent = new EventEmitter();
+export const airAccountsEvent = new EventEmitter();
