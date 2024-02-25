@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import { PurpleAirModel } from "../../db/models/air_account.js";
+import { PurpleAirModel } from "../../db/models/air_accounts.js";
 
 class PurpleAirApi {
    static url = 'https://api.purpleair.com/v1';
@@ -43,7 +43,7 @@ class PurpleAirApi {
             if (!Array.isArray(sensorsList) || sensorsList?.length === 0) return;
             const sensorDataList = await Promise.all(sensorsList?.map((sensorId: any) => this.fetchSensorData(sensorId, API_KEY, ObjectId)));
             sensorDataList.filter(data => data !== undefined)
-            await PurpleAirModel.findByIdAndUpdate(Object, {
+            await PurpleAirModel.findByIdAndUpdate(ObjectId, {
                 devices: sensorDataList
             })
             console.log("Devices info added to the ", ObjectId)

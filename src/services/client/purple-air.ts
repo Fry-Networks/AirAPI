@@ -1,6 +1,6 @@
 
 import PurpleAirApi from "../../services/api/purple-air.js";
-import { PurpleAirAccount, PurpleAirModel } from "../../db/models/air_account.js";
+import { PurpleAirAccount, PurpleAirModel } from "../../db/models/air_accounts.js";
 
 class PurpleAirClient  { 
 
@@ -18,8 +18,8 @@ class PurpleAirClient  {
        let sensorIds = sensors!.map(sensor => sensor[0]);
        if(sensorIds.length > 0) { 
             setInterval(PurpleAirApi.fetchSensorsInterval(sensorIds,ObjectId, api_key ), 3000000)
-
        }
+       
        clients.set(ObjectId, api_key);
     }
 
@@ -36,9 +36,11 @@ class PurpleAirClient  {
               );
             }
           }
+
     }
 
     saveData (data: any) {
+      console.log(data)
 
     }
 

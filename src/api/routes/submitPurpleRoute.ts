@@ -1,0 +1,60 @@
+import express from "express";
+import axios from "axios";
+import { connect, newApiKeyEvent } from "../../db/connect.js";
+import { getUserByAddress } from "../../db/models/users-schema.js";
+import { PurpleAirModel } from "../../db/models/air_accounts.js";
+import PurpleAirApi from "../../services/api/purple-air.js";
+
+const router = express.Router();
+
+router.post("/api/purple-air", async function (req, res) {
+    try {
+      const data: {
+        api_key: string;
+        address: string
+      } = req.body;
+      // Check if the key is already in the database
+      const isPresent = await PurpleAirModel.exists({ api_key: data.api_key });
+  
+      if (isPresent) {
+        return void res.status(409).send({
+          message: "Key already exists in database.",
+          status: "ERROR",
+        });
+      }
+     
+      // Check if the key is valid by making a request to the API
+      //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
+      const isValid = await PurpleAirApi.isValidApiKey(data.api_key)
+      if(!isValid) { 
+        return void res.status(400).send({
+          message: "Key is invalid. (Didn't pass API check)",
+          status: "ERROR",
+        });
+      }
+      // Add the key to the database
+      const user = await getUserByAddress(data.address);
+  
+      const air_Account = new PurpleAirModel({
+        api_key: data.api_key,
+        user_id: user._id,
+        timestamp: new Date(),
+        api_type: "purple-air",
+      });
+      await air_Account.save();
+      newApiKeyEvent.emit("newApiKey", air_Account._id);
+  
+      res.status(200).send({
+        message:
+          "Successfully linked your API Key to your wallet address!\nWe will soon begin to retreive data from your air stations/devices.",
+        status: "SUCCESS",
+      });
+    } catch (e) {
+      res.status(500).send({
+        message: "Internal server error.",
+        status: "ERROR",
+      });
+    }
+  });
+
+export default router;
