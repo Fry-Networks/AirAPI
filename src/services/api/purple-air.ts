@@ -37,17 +37,18 @@ class PurpleAirApi {
         }
     }
 
-    static  fetchSensorsInterval (sensorsList: number[], ObjectId: string, API_KEY: string ) {
-       return  async () => {
+    static  async fetchSensorsInterval (sensorsList: number[], ObjectId: string, API_KEY: string ) {
 
             if (!Array.isArray(sensorsList) || sensorsList?.length === 0) return;
-            const sensorDataList = await Promise.all(sensorsList?.map((sensorId: any) => this.fetchSensorData(sensorId, API_KEY, ObjectId)));
+            const sensorDataList = await Promise.all(sensorsList?.map((sensorId) => this.fetchSensorData(sensorId.toString(), API_KEY, ObjectId)));
             sensorDataList.filter(data => data !== undefined)
             await PurpleAirModel.findByIdAndUpdate(ObjectId, {
-                devices: sensorDataList
+                //only the sensors ids are being added to the array
+                sensors:    sensorDataList
             })
             console.log("Devices info added to the ", ObjectId)
-        }
+         
+        
     }
 
     static async fetchSensorData (id: string, API_KEY: string, ObjectId: string) {

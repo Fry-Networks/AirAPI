@@ -268,3 +268,4 @@ export interface EcowittData extends BaseAirData {
         '24_hours_aqi'?: number;
     };
 }
+

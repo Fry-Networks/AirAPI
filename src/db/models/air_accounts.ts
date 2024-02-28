@@ -20,6 +20,7 @@ export interface AirAccount extends mongoose.Document {
 }
 const PurpleAirSchema = new mongoose.Schema({
   api_key: { type: String, required: true },
+  sensors: [String],
 });
 export const PurpleAirModel = AirAccountModel.discriminator('purpleAir', PurpleAirSchema);
 
@@ -34,25 +35,27 @@ const EcowittSchema = new mongoose.Schema({
 
 export const EcowittModel = AirAccountModel.discriminator('ecowitt', EcowittSchema);
 
-const W3bStreamSchema = new mongoose.Schema({
-  api_key: { type: String, required: true },
-  app_key: { type: String, required: true },
+const PebbleSchema = new mongoose.Schema({
+  owner: { type: String, required: true },
+  imei: { type: String, required: true },
 });
 
-export const W3bStreamModel = AirAccountModel.discriminator('w3bStream', W3bStreamSchema);
+export const PebbleModel = AirAccountModel.discriminator('pebble', PebbleSchema);
 
 
 export interface PurpleAirAccount extends AirAccount {
   api_type: "purple-air";
   api_key: string;
+  sensors: string[];
 }
 export interface AmbientAccount extends AirAccount {
   api_type: "ambient";
   api_key: string;
 }
-export interface W3bStreamAccount extends AirAccount {
-  api_type: "w3bstream";
-  api_key: string;
+export interface PebbleAccount extends AirAccount {
+  api_type: "pebble";
+  owner: string;
+  imei: string;
 }
 export interface EcowittAccount extends AirAccount {
   api_type: "ecowitt";
@@ -61,6 +64,6 @@ export interface EcowittAccount extends AirAccount {
 }
 
 
-type API_TYPE = "purple-air" | "ambient" | "w3bstream" | "ecowitt";
+type API_TYPE = "purple-air" | "ambient" | "pebble" | "ecowitt";
 
 export default AirAccountSchema
