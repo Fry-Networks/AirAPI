@@ -52,9 +52,13 @@ const startApp = async () => {
         const findedApikey = await AirAccountModel.findById(ObjectId);
         if (findedApikey?.api_type === "ecowitt") {
           await createClientForEcoWittKey(ecowittClients, ObjectId);
-        } else {
+        } else if   (findedApikey?.api_type === "ambient") {
           await createClientForAmbientKey(ambientClients, ObjectId);
-        }
+        } else if (findedApikey?.api_type === "purple-air") {
+          await PurpleAirClient.createClient(purpleairClients, ObjectId);
+        } else if (findedApikey?.api_type === "pebble") {
+            
+            }
     });
 
     newApiKeyEvent.on("deleteApiKey", async (ObjectId: string) => {

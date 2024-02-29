@@ -1,62 +1,70 @@
 import express from "express";
-import { AmbientModel } from "../../db/models/air_accounts.js";
+import { AmbientModel, PebbleModel } from "../../db/models/air_accounts.js";
 import axios from "axios";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 import { newApiKeyEvent } from "../../db/connect.js";
+import PebbleApi from "services/api/pebble.js";
 
 const router = express.Router();
 
-router.post("/api/submitkey", async function (req, res) {
+router.post("/api/submitpebble", async function (req, res) {
     try {
         const data: {
-          key: string;
-          address: string;
+          imei: string;
+          erc_owner: string;
+          algo_address: string
         } = req.body;
         console.log(data);
         // Check if the key is already in the database
-        const existingKey = (await AmbientModel.exists({ api_key: data.key })) || (await AmbientModel.exists({ token: data.key }));
+        const existingImei = await PebbleModel.exists({ imei: data.imei });
     
-        if (existingKey) {
+        if (existingImei) {
           return void res.status(409).send({
-            message: "Key already exists in database.",
+            message: "Imei already exists in database.",
             status: "ERROR",
           });
         }
         // Check regex
-        const regexCheck = /^[a-z0-9]{64}$/.test(data.key);
+        const regexCheck = /^[0-9]{15}$/.test(data.imei);
         if (!regexCheck) {
           return void res.status(400).send({
-            message: "Key is invalid. (Didn't pass regex check)",
+            message: "Imei is invalid. (Didn't pass regex check)",
             status: "ERROR",
           });
         }
         // Check if the key is valid by making a request to the API
         //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
         try {
-          await axios.get(
-            `https://rt.ambientweather.net/v1/devices?applicationKey=${process.env.AW_APPLICATION_KEY}&apiKey=${data.key}`
-          );
+          const isOwner = await PebbleApi.verifyOwnership(data.imei, data.erc_owner);
+          if (!isOwner) {
+            return void res.status(400).send({
+              message: "Failed to ensure ownership of the pebble tracker (imeil and owner (ERC20 address) do not match)",
+              status: "ERROR",
+            });
+          }
         } catch (e) {
           return void res.status(400).send({
-            message: "Key is invalid. (Didn't pass API check)",
+            message: "Failed to ensure ownership of the pebble tracker (imeil and owner (ERC20 address) do not match)",
             status: "ERROR",
           });
         }
         // Add the key to the database
-        const user = await getUserByAddress(data.address);
+        const user = await getUserByAddress(data.algo_address);
     
-        const key = new AmbientModel({
-          api_key: data.key,
+        const key = new PebbleModel({
+          imei: data.imei,
           user_id: user._id,
+          address: data.algo_address,
           timestamp: new Date(),
-          api_type: "ambient",
+          owner: data.erc_owner.toLowerCase(),
+          api_type: "pebble",
         });
         await key.save();
         newApiKeyEvent.emit("newApiKey", key._id);
     
         res.status(200).send({
           message:
-            "Successfully linked your API Key to your wallet address!\nWe will soon begin to retreive data from your air stations/devices.",
+            "Successfully linked your Pebble device to your wallet address!\nWe will soon begin to retreive data from it.",
           status: "SUCCESS",
         });
       } catch (e) {

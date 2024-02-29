@@ -269,3 +269,60 @@ export interface EcowittData extends BaseAirData {
     };
 }
 
+const PebbleDataSchema = new mongoose.Schema({
+    latitude: { type: Number, required: false },
+    longitude: { type: Number, required: false },
+    timestamp: { type: Date, required: false },
+    light: { type: Number, required: false },
+    snr: { type: Number, required: false },
+    vbat: { type: Number, required: false },
+    humidity: { type: Number, required: false },
+    pressure: { type: Number, required: false },
+    gyroscope: { type: String, required: false },
+    temperature: { type: Number, required: false },
+    gas_resistance: { type: Number, required: false },
+    accelerometer: { type: String, required: false },
+    temperature2: { type: Number, required: false },
+});
+
+export const PebbleDataModel = BaseAirModel.discriminator('pebble', PebbleDataSchema);
+
+export interface PebbleData extends BaseAirData {
+    latitude: number;
+    longitude: number;
+    timestamp: Date;
+    light: number; // lux
+    snr: number; // dB
+    vbat: number; // volt battery
+    id: string;
+    humidity: number; // Percent
+    pressure: number; // Pascal
+    gyroscope: string;  // m/s^2
+    temperature: number; // Celsius
+    gas_resistance: number; // Ohms
+    accelerometer: string;  // m/s^2
+    temperature2: number;   // Celsius
+}
+    /*{
+  "data": {
+    "pebble_device_record": [
+      {
+        "latitude": "44.0900000",
+        "longitude": "-92.5000000",
+        "timestamp": 1709211112,
+        "light": 24.43,
+        "id": "351358813282198-1709211112",
+        "snr": 51.25,
+        "vbat": 68.9,
+        "humidity": 51.67,
+        "pressure": 983.51,
+        "gyroscope": "[-55,-30,-3]",
+        "temperature": 21474831.23,
+        "gas_resistance": 2895731.84,
+        "accelerometer": "[10,3092,7874]",
+        "temperature2": -10.5
+      }
+    ]
+  }
+}
+*/
