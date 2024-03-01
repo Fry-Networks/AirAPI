@@ -20,7 +20,7 @@ export interface AirAccount extends mongoose.Document {
 }
 const PurpleAirSchema = new mongoose.Schema({
   api_key: { type: String, required: true },
-  sensors: [String],
+  sensor: { type: String, required: true }
 });
 export const PurpleAirModel = AirAccountModel.discriminator('purpleAir', PurpleAirSchema);
 
@@ -45,8 +45,8 @@ export const PebbleModel = AirAccountModel.discriminator('pebble', PebbleSchema)
 
 export interface PurpleAirAccount extends AirAccount {
   api_type: "purple-air";
-  api_key: string;
-  sensors: string[];
+  read_key: string;
+  sensor: string;
 }
 export interface AmbientAccount extends AirAccount {
   api_type: "ambient";

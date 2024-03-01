@@ -9,6 +9,7 @@ const BaseAirSchema = new mongoose.Schema(
             location: {
                 lat: Number,
                 lon: Number,
+                altitude: { type: Number, required: false}
             }
         },
     },
@@ -29,6 +30,7 @@ export interface BaseAirData extends mongoose.Document {
         location: {
             lat: number;
             lon: number;
+            altitude?: number
         };
     };
  
@@ -326,3 +328,211 @@ export interface PebbleData extends BaseAirData {
   }
 }
 */
+
+const PurpleAirDataSchema = new mongoose.Schema({
+    api_version: { type: String, required: false },
+    time_stamp: { type: Number, required: false },
+    data_time_stamp: { type: Number, required: false },
+    sensor: {
+        type: {
+            sensor_index: { type: Number, required: false },
+            last_modified: { type: Number, required: false },
+            date_created: { type: Number, required: false },
+            last_seen: { type: Number, required: false },
+            private: { type: Number, required: false },
+            is_owner: { type: Number, required: false },
+            name: { type: String, required: false },
+            icon: { type: Number, required: false },
+            location_type: { type: Number, required: false },
+            model: { type: String, required: false },
+            hardware: { type: String, required: false },
+            led_brightness: { type: Number, required: false },
+            firmware_version: { type: String, required: false },
+            rssi: { type: Number, required: false },
+            uptime: { type: Number, required: false },
+            pa_latency: { type: Number, required: false },
+            memory: { type: Number, required: false },
+            position_rating: { type: Number, required: false },
+            latitude: { type: Number, required: false },
+            longitude: { type: Number, required: false },
+            altitude: { type: Number, required: false },
+            channel_state: { type: Number, required: false },
+            channel_flags: { type: Number, required: false },
+            channel_flags_manual: { type: Number, required: false },
+            channel_flags_auto: { type: Number, required: false },
+            confidence: { type: Number, required: false },
+            humidity: { type: Number, required: false },
+            humidity_a: { type: Number, required: false },
+            humidity_b: { type: Number, required: false },
+            temperature: { type: Number, required: false },
+            temperature_a: { type: Number, required: false },
+            temperature_b: { type: Number, required: false },
+            pressure: { type: Number, required: false },
+            pressure_a: { type: Number, required: false },
+            pressure_b: { type: Number, required: false },
+            voc: { type: Number, required: false },
+            voc_b: { type: Number, required: false },
+            analog_input: { type: Number, required: false },
+            pm1_0: { type: Number, required: false },
+            pm1_0_a: { type: Number, required: false },
+            pm2_5: { type: Number, required: false },
+            pm2_5_a: { type: Number, required: false },
+            pm2_5_alt: { type: Number, required: false },
+            pm2_5_alt_a: { type: Number, required: false },
+            pm10_0: { type: Number, required: false },
+            pm10_0_a: { type: Number, required: false },
+            scattering_coefficient: { type: Number, required: false },
+            scattering_coefficient_a: { type: Number, required: false },
+            deciviews: { type: Number, required: false },
+            deciviews_a: { type: Number, required: false },
+            visual_range: { type: Number, required: false },
+            visual_range_a: { type: Number, required: false },
+            "0_3_um_count": { type: Number, required: false },
+            "0_3_um_count_a": { type: Number, required: false },
+            "0_5_um_count": { type: Number, required: false },
+            "0_5_um_count_a": { type: Number, required: false },
+            "1_0_um_count": { type: Number, required: false },
+            "1_0_um_count_a": { type: Number, required: false },
+            "2_5_um_count": { type: Number, required: false },
+            "2_5_um_count_a": { type: Number, required: false },
+            "5_0_um_count": { type: Number, required: false },
+            "5_0_um_count_a": { type: Number, required: false },
+            "10_0_um_count": { type: Number, required: false },
+            "10_0_um_count_a": { type: Number, required: false },
+            pm1_0_cf_1: { type: Number, required: false },
+            pm1_0_cf_1_a: { type: Number, required: false },
+            pm1_0_atm: { type: Number, required: false },
+            pm1_0_atm_a: { type: Number, required: false },
+            pm2_5_atm: { type: Number, required: false },
+            pm2_5_atm_a: { type: Number, required: false },
+            pm2_5_cf_1: { type: Number, required: false },
+            pm2_5_cf_1_a: { type: Number, required: false },
+            pm10_0_atm: { type: Number, required: false },
+            pm10_0_atm_a: { type: Number, required: false },
+            pm10_0_cf_1: { type: Number, required: false },
+            pm10_0_cf_1_a: { type: Number, required: false },
+            primary_key_a: { type: String, required: false },
+            stats: {
+                pm2_5: { type: Number, required: false },
+                pm2_5_10minute: { type: Number, required: false },
+                pm2_5_30minute: { type: Number, required: false },
+                pm2_5_60minute: { type: Number, required: false },
+                pm2_5_6hour: { type: Number, required: false },
+                pm2_5_24hour: { type: Number, required: false },
+                pm2_5_1week: { type: Number, required: false },
+                time_stamp: { type: Number, required: false },
+            },
+            stats_a: {
+                pm2_5: { type: Number, required: false },
+                pm2_5_10minute: { type: Number, required: false },
+                pm2_5_30minute: { type: Number, required: false },
+                pm2_5_60minute: { type: Number, required: false },
+                pm2_5_6hour: { type: Number, required: false },
+                pm2_5_24hour: { type: Number, required: false },
+                pm2_5_1week: { type: Number, required: false },
+                time_stamp: { type: Number, required: false },
+            }
+        }
+    }
+});
+
+export const PurpleAirDataModel = BaseAirModel.discriminator('purple-air', PurpleAirDataSchema);
+
+export interface PurpleSensorData {
+    api_version: string;
+    time_stamp: number;
+    data_time_stamp: number;
+    sensor: {
+      sensor_index: number;
+      last_modified: number;
+      date_created: number;
+      last_seen: number;
+      private: number;
+      is_owner: number;
+      name: string;
+      icon: number;
+      location_type: number;
+      model: string;
+      hardware: string;
+      led_brightness: number;
+      firmware_version: string;
+      rssi: number;
+      uptime: number;
+      pa_latency: number;
+      memory: number;
+      position_rating: number;
+      latitude: number;
+      longitude: number;
+      altitude: number;
+      channel_state: number;
+      channel_flags: number;
+      channel_flags_manual: number;
+      channel_flags_auto: number;
+      confidence: number;
+      humidity: number;
+      humidity_a: number;
+      humidity_b: number;
+      temperature: number;
+      temperature_a: number;
+      temperature_b: number;
+      pressure: number;
+      pressure_a: number;
+      pressure_b: number;
+      voc: number;
+      voc_b: number;
+      analog_input: number;
+      pm1_0: number;
+      pm1_0_a: number;
+      pm2_5: number;
+      pm2_5_a: number;
+      pm2_5_alt: number;
+      pm2_5_alt_a: number;
+      pm10_0: number;
+      pm10_0_a: number;
+      scattering_coefficient: number;
+      scattering_coefficient_a: number;
+      deciviews: number;
+      deciviews_a: number;
+      visual_range: number;
+      visual_range_a: number;
+      "0_3_um_count": number;
+      "0_3_um_count_a": number;
+      "0_5_um_count": number;
+      "0_5_um_count_a": number;
+      "1_0_um_count": number;
+      "1_0_um_count_a": number;
+      "2_5_um_count": number;
+      "2_5_um_count_a": number;
+      "5_0_um_count": number;
+      "5_0_um_count_a": number;
+      "10_0_um_count": number;
+      "10_0_um_count_a": number;
+      pm1_0_cf_1: number;
+      pm1_0_cf_1_a: number;
+      pm1_0_atm: number;
+      pm1_0_atm_a: number;
+      pm2_5_atm: number;
+      pm2_5_atm_a: number;
+      pm2_5_cf_1: number;
+      pm2_5_cf_1_a: number;
+      pm10_0_atm: number;
+      pm10_0_atm_a: number;
+      pm10_0_cf_1: number;
+      pm10_0_cf_1_a: number;
+      primary_key_a: string;
+      stats: SensorStats;
+      stats_a: SensorStats;
+    };
+  }
+  
+  interface SensorStats {
+    pm2_5: number;
+    pm2_5_10minute: number;
+    pm2_5_30minute: number;
+    pm2_5_60minute: number;
+    pm2_5_6hour: number;
+    pm2_5_24hour: number;
+    pm2_5_1week: number;
+    time_stamp: number;
+  }
+  

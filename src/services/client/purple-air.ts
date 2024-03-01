@@ -1,10 +1,11 @@
 
 import PurpleAirApi from "../../services/api/purple-air.js";
 import { PurpleAirAccount, PurpleAirModel } from "../../db/models/air_accounts.js";
+import { PurpleAirDataModel, PurpleSensorData } from "db/models/air_data.js";
 
 class PurpleAirClient {
 
-  static async createClient(clients: Map<string, string>, ObjectId: string) {
+  static async createClient(clients: Clients, ObjectId: string) {
     if (clients.has(ObjectId)) {
       return;
     }
@@ -12,21 +13,17 @@ class PurpleAirClient {
     if (!account) {
       return;
     }
-    const { api_key } = account;
-    let sensors = await PurpleAirApi.getSensorsDetails(api_key)
-    setInterval(async () => {
-      sensors = await PurpleAirApi.getSensorsDetails(api_key);
-      let sensorIds = sensors!.map(sensor => sensor[0]);
-      if (sensorIds.length > 0) {
-        PurpleAirApi.fetchSensorsInterval(sensorIds, ObjectId, api_key)
-      }
-    }, 3000000)
+    const { read_key, sensor } = account;
 
-
-    clients.set(ObjectId, api_key);
+    clients.set(ObjectId, {
+      read_key,
+      sensor,
+      obj_id: ObjectId,
+      last_data: 0
+    });
   }
 
-  static async startDataSync(clients: Map<string, string>) {
+  static async startClientSync(clients: Clients) {
     const accounts: PurpleAirAccount[] = await PurpleAirModel.find({
       api_type: 'purple-air'
     })
@@ -42,11 +39,44 @@ class PurpleAirClient {
 
   }
 
-  saveData(data: any) {
-    console.log(data)
+  static async startDataSync(clients: Clients) {
+    setInterval(async () => {
+      clients.forEach(async (client, ObjectId) => {
+        const data: PurpleSensorData | undefined = await PurpleAirApi.fetchSensorData(client.sensor, client.read_key, ObjectId);
+        if (data && data.time_stamp > client.last_data) {
+          clients.set(ObjectId, {
+            ...client,
+            last_data: data.time_stamp
+          });
+          this.saveData(data);
+        }
+      });
+    }, 300000);
+  }
+
+  static async saveData(data: PurpleSensorData) {
+    const sensorData = new PurpleAirDataModel(
+      {
+        ...data,
+        timestamp: data.time_stamp,
+        metadata: {
+          type: 'purple-air',
+          deviceMAC: data.sensor.primary_key_a,
+          location: {
+            lat: data.sensor.latitude,
+            lon: data.sensor.longitude,
+            altitude: data.sensor.altitude
+
+          }
+        }
+      });
+    await sensorData.save();
+    console.log(`Saved data for sensor ${data.sensor.sensor_index}`);
 
   }
 
 }
 
 export default PurpleAirClient;
+
+export type Clients = Map<string, { read_key: string, sensor: string, obj_id: string, last_data: number }>;

@@ -10,11 +10,12 @@ const router = express.Router();
 router.post("/api/purple-air", async function (req, res) {
     try {
       const data: {
-        api_key: string;
-        address: string
+        read_key: string;
+        sensor_id: string;
+        address: string;
       } = req.body;
       // Check if the key is already in the database
-      const isPresent = await PurpleAirModel.exists({ api_key: data.api_key });
+      const isPresent = await PurpleAirModel.exists({ sensor_id: data.sensor_id });
   
       if (isPresent) {
         return void res.status(409).send({
@@ -25,7 +26,7 @@ router.post("/api/purple-air", async function (req, res) {
      
       // Check if the key is valid by making a request to the API
       //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
-      const isValid = await PurpleAirApi.isValidApiKey(data.api_key)
+      const isValid = await PurpleAirApi.isValidApiKey(data.read_key)
       if(!isValid) { 
         return void res.status(400).send({
           message: "Key is invalid. (Didn't pass API check)",
@@ -36,9 +37,10 @@ router.post("/api/purple-air", async function (req, res) {
       const user = await getUserByAddress(data.address);
   
       const air_Account = new PurpleAirModel({
-        api_key: data.api_key,
+        read_key: data.read_key,
         user_id: user._id,
         timestamp: new Date(),
+        address: data.address,
         api_type: "purple-air",
       });
       await air_Account.save();

@@ -60,6 +60,7 @@ router.post("/api/submitEcokey", async function (req, res) {
         const key = new EcowittModel({
           api_key: data.key,
           user_id: user._id,
+          address: data.address,
           timestamp: new Date(),
           api_type: "ecowitt",
           app_key: data.app_key,
