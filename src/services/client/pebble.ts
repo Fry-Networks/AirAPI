@@ -5,7 +5,7 @@ import PebbleApi from "services/api/pebble";
 
 class PebbleClient {
 
-  static async createClient(clients: Map<string, { imei: string, last_data?: string }>, ObjectId: string) {
+  static async createClient(clients: PebbleClients, ObjectId: string) {
     if (clients.has(ObjectId)) {
       return;
     }
@@ -30,7 +30,7 @@ class PebbleClient {
     }
   }
 
-  static async startDataSync(clients: Map<string, { imei: string, last_data?: Date }>) {
+  static async startDataSync(clients: PebbleClients) {
     clients.forEach(async (obj, ObjectId) => {
       const data = (await PebbleApi.getPebbleDataByImei(obj.imei))?.pebble_device_record[0];
       if (data && data.timestamp !== clients.get(ObjectId)!.last_data) {
@@ -71,3 +71,5 @@ class PebbleClient {
 }
 
 export default PebbleClient;
+
+export type PebbleClients = Map<string, { imei: string, last_data?: Date }>;

@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { PurpleAirModel } from "../../db/models/air_accounts.js";
-import { Clients } from "services/client/purple-air.js";
+import { PurpleClients } from "services/client/purple-air.js";
 
 class PurpleAirApi {
     static url = 'https://api.purpleair.com/v1';

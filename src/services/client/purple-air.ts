@@ -5,7 +5,7 @@ import { PurpleAirDataModel, PurpleSensorData } from "db/models/air_data.js";
 
 class PurpleAirClient {
 
-  static async createClient(clients: Clients, ObjectId: string) {
+  static async createClient(clients: PurpleClients, ObjectId: string) {
     if (clients.has(ObjectId)) {
       return;
     }
@@ -23,7 +23,7 @@ class PurpleAirClient {
     });
   }
 
-  static async startClientSync(clients: Clients) {
+  static async startClientSync(clients: PurpleClients) {
     const accounts: PurpleAirAccount[] = await PurpleAirModel.find({
       api_type: 'purple-air'
     })
@@ -39,7 +39,7 @@ class PurpleAirClient {
 
   }
 
-  static async startDataSync(clients: Clients) {
+  static async startDataSync(clients: PurpleClients) {
     setInterval(async () => {
       clients.forEach(async (client, ObjectId) => {
         const data: PurpleSensorData | undefined = await PurpleAirApi.fetchSensorData(client.sensor, client.read_key, ObjectId);
@@ -79,4 +79,4 @@ class PurpleAirClient {
 
 export default PurpleAirClient;
 
-export type Clients = Map<string, { read_key: string, sensor: string, obj_id: string, last_data: number }>;
+export type PurpleClients = Map<string, { read_key: string, sensor: string, obj_id: string, last_data: number }>;
