@@ -5,7 +5,7 @@ import { newApiKeyEvent } from "./db/connect.js";
 import ambient from "ambient-weather-api";
 import { createClientForAmbientKey } from "./devices/ambient.js";
 import { createClientForEcoWittKey } from "./devices/ecowitt.js";
-import { AirAccountModel, AmbientAccount, AmbientModel, EcowittAccount, EcowittModel, PebbleAccount, PebbleModel, PurpleAirModel } from "db/models/air_accounts.js";
+import { AirAccountModel, AmbientAccount, AmbientModel, EcowittAccount, EcowittModel, PebbleAccount, PebbleModel, PurpleAirAccount, PurpleAirModel } from "db/models/air_accounts.js";
 import PurpleAirClient, { PurpleClients } from "services/client/purple-air.js";
 import PebbleClient, { PebbleClients } from "services/client/pebble.js";
 const ecowittClients: Map<string, string> = new Map();
@@ -27,7 +27,7 @@ const startApp = async () => {
   }
 
   // Handling for PurpleAir devices
-  const purpleAirApiKeys: AmbientAccount[] = await PurpleAirModel.find({ api_type: "purpleair" });
+  const purpleAirApiKeys: PurpleAirAccount[] = await PurpleAirModel.find({ api_type: "purpleair" });
   for (let account of purpleAirApiKeys) {
     try {
       await PurpleAirClient.createClient(purpleairClients, account._id);
