@@ -22,25 +22,25 @@ const PurpleAirSchema = new mongoose.Schema({
   api_key: { type: String, required: true },
   sensor: { type: String, required: true }
 });
-export const PurpleAirModel = AirAccountModel.discriminator('purpleAir', PurpleAirSchema);
+export const PurpleAirModel = AirAccountModel.discriminator('purpleAir_acc', PurpleAirSchema);
 
 const AmbientSchema = new mongoose.Schema({
    api_key: { type: String, required: true },
 });
-export const AmbientModel = AirAccountModel.discriminator('ambient', AmbientSchema);
+export const AmbientModel = AirAccountModel.discriminator('ambient_acc', AmbientSchema);
 
 const EcowittSchema = new mongoose.Schema({
   api_key: { type: String, required: true },
 });
 
-export const EcowittModel = AirAccountModel.discriminator('ecowitt', EcowittSchema);
+export const EcowittModel = AirAccountModel.discriminator('ecowitt_acc', EcowittSchema);
 
 const PebbleSchema = new mongoose.Schema({
   owner: { type: String, required: true },
   imei: { type: String, required: true },
 });
 
-export const PebbleModel = AirAccountModel.discriminator('pebble', PebbleSchema);
+export const PebbleModel = AirAccountModel.discriminator('pebble_acc', PebbleSchema);
 
 
 export interface PurpleAirAccount extends AirAccount {

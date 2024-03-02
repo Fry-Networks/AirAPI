@@ -1,7 +1,7 @@
 // Ambient Miner File
 import ambient, { Device } from "ambient-weather-api";
-import { AirAccountModel, AmbientAccount, AmbientModel } from "../db/models/air_accounts";
-import { AmbientDataModel } from "../db/models/air_data";
+import { AirAccountModel, AmbientAccount, AmbientModel } from "../db/models/air_accounts.js";
+import { AmbientDataModel } from "../db/models/air_data.js";
 const ambientApplicationKey = process.env.AW_APPLICATION_KEY!;
 
 export const createClientForAmbientKey = async (ambientClients: Map<string, ambient>, ObjectId: string) => {

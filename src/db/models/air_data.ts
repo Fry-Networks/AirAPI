@@ -72,7 +72,7 @@ const AmbientDataSchema = new mongoose.Schema({
     winddir_avg10m: { type: Number, required: false },
 });
 
-export const AmbientDataModel = BaseAirModel.discriminator('ambient', AmbientDataSchema);
+export const AmbientDataModel = BaseAirModel.discriminator('ambient_data', AmbientDataSchema);
 
 export interface AmbientData extends BaseAirData {
     pm25?: number;
@@ -225,7 +225,7 @@ const EcowittDataSchema = new mongoose.Schema({
     },
 });
 
-export const EcowittDataModel = BaseAirModel.discriminator('ecowitt', EcowittDataSchema);
+export const EcowittDataModel = BaseAirModel.discriminator('ecowitt_data', EcowittDataSchema);
 
 export interface EcowittData extends BaseAirData {
     pm25_ch1?: {
@@ -287,7 +287,7 @@ const PebbleDataSchema = new mongoose.Schema({
     temperature2: { type: Number, required: false },
 });
 
-export const PebbleDataModel = BaseAirModel.discriminator('pebble', PebbleDataSchema);
+export const PebbleDataModel = BaseAirModel.discriminator('pebble_data', PebbleDataSchema);
 
 export interface PebbleData extends BaseAirData {
     latitude: number;
@@ -436,7 +436,7 @@ const PurpleAirDataSchema = new mongoose.Schema({
     }
 });
 
-export const PurpleAirDataModel = BaseAirModel.discriminator('purple-air', PurpleAirDataSchema);
+export const PurpleAirDataModel = BaseAirModel.discriminator('purple-air_data', PurpleAirDataSchema);
 
 export interface PurpleSensorData {
     api_version: string;
