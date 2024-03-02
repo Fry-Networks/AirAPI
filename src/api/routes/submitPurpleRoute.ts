@@ -7,7 +7,7 @@ import PurpleAirApi from "../../services/api/purple-air.js";
 
 const router = express.Router();
 
-router.post("/api/purple-air", async function (req, res) {
+router.post("/api/submitpurple", async function (req, res) {
     try {
       const data: {
         read_key: string;
