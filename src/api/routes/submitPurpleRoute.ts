@@ -15,7 +15,7 @@ router.post("/api/submitpurple", async function (req, res) {
         address: string;
       } = req.body;
       // Check if the key is already in the database
-      const isPresent = await PurpleAirModel.exists({ sensor_id: data.sensor_id });
+      const isPresent = await PurpleAirModel.exists({ sensor: data.sensor_id });
   
       if (isPresent) {
         return void res.status(409).send({
