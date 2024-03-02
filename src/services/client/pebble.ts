@@ -28,28 +28,39 @@ class PebbleClient {
     if (devices_ids.includes(device_id)) {
       clients.set(ObjectId, { imei });
     }
+    console.log(`Created client for imei ${account.imei}`);
+    let firstTime = true;
+    setInterval(async () => {
+      if (firstTime) {
+        firstTime = false;
+        return;
+      }
+      this.syncData(ObjectId, imei, clients);
+    }, 600000);
   }
 
-  static async startDataSync(clients: PebbleClients) {
-    clients.forEach(async (obj, ObjectId) => {
-      const data = (await PebbleApi.getPebbleDataByImei(obj.imei))?.pebble_device_record[0];
-      if (data && data.timestamp !== clients.get(ObjectId)!.last_data) {
-        this.saveData(data, obj.imei);
-      }
-    });
+  static async syncData(obj_id: string, imei: string, clients: PebbleClients) {
+    const data = (await PebbleApi.getPebbleDataByImei(imei))?.pebble_device_record[0];
+    if (data && data.timestamp !== clients.get(obj_id)!.last_data) {
+      clients.set(obj_id, {
+        imei,
+        last_data: data.timestamp
+      });
+      this.saveData(data, imei);
+    }
   }
 
   static async saveData(data: PebbleData, imei: string) {
     const newData = new PebbleDataModel({
       metadata: {
         location: {
-          latitude: data.latitude,
-          longitude: data.longitude,
+          lat: +data.latitude,
+          lon: +data.longitude,
         },
         data_type: "pebble",
         deviceMAC: imei
       },
-      timestamp: data.timestamp,
+      timestamp: data.timestamp + '000',
       temperature: data.temperature,
       humidity: data.humidity,
       pressure: data.pressure,
@@ -62,10 +73,9 @@ class PebbleClient {
       accelerometer: data.accelerometer,
       temperature2: data.temperature2
     });
-    await newData.save();
+    newData.save().then(() => {
     console.log(`Data saved for device ${imei} at ${data.timestamp}`);
-
-
+    });
   }
 
 }

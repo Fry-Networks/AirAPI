@@ -11,8 +11,8 @@ router.post("/api/submitpebble", async function (req, res) {
     try {
         const data: {
           imei: string;
-          erc_owner: string;
-          algo_address: string
+          erc_addr: string;
+          address: string
         } = req.body;
         console.log(data);
         // Check if the key is already in the database
@@ -35,7 +35,8 @@ router.post("/api/submitpebble", async function (req, res) {
         // Check if the key is valid by making a request to the API
         //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
         try {
-          const isOwner = await PebbleApi.verifyOwnership(data.imei, data.erc_owner);
+          const isOwner = await PebbleApi.verifyOwnership(data.imei, data.erc_addr);
+          console.log(isOwner);
           if (!isOwner) {
             return void res.status(400).send({
               message: "Failed to ensure ownership of the pebble tracker (imeil and owner (ERC20 address) do not match)",
@@ -43,20 +44,21 @@ router.post("/api/submitpebble", async function (req, res) {
             });
           }
         } catch (e) {
+          console.log(e);
           return void res.status(400).send({
             message: "Failed to ensure ownership of the pebble tracker (imeil and owner (ERC20 address) do not match)",
             status: "ERROR",
           });
         }
         // Add the key to the database
-        const user = await getUserByAddress(data.algo_address);
+        const user = await getUserByAddress(data.address);
     
         const key = new PebbleModel({
           imei: data.imei,
           user_id: user._id,
-          address: data.algo_address,
+          address: data.address,
           timestamp: new Date(),
-          owner: data.erc_owner.toLowerCase(),
+          owner: data.erc_addr.toLowerCase(),
           api_type: "pebble",
         });
         await key.save();

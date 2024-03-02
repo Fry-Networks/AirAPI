@@ -13,13 +13,10 @@ export interface AirAccount extends mongoose.Document {
   timestamp: Date;
   api_type: API_TYPE;
   info: String;
-  devices: Array<any>;
-  client_id?: String,
-  secret?: String,
-  api_key?: String,
+  devices?: Array<any>;
 }
 const PurpleAirSchema = new mongoose.Schema({
-  api_key: { type: String, required: true },
+  read_key: { type: String, required: true },
   sensor: { type: String, required: true }
 });
 export const PurpleAirModel = AirAccountModel.discriminator('purpleAir_acc', PurpleAirSchema);

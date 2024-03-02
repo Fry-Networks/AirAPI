@@ -272,9 +272,6 @@ export interface EcowittData extends BaseAirData {
 }
 
 const PebbleDataSchema = new mongoose.Schema({
-    latitude: { type: Number, required: false },
-    longitude: { type: Number, required: false },
-    timestamp: { type: Date, required: false },
     light: { type: Number, required: false },
     snr: { type: Number, required: false },
     vbat: { type: Number, required: false },
@@ -439,6 +436,7 @@ const PurpleAirDataSchema = new mongoose.Schema({
 export const PurpleAirDataModel = BaseAirModel.discriminator('purple-air_data', PurpleAirDataSchema);
 
 export interface PurpleSensorData {
+    
     api_version: string;
     time_stamp: number;
     data_time_stamp: number;

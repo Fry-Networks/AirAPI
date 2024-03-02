@@ -47,6 +47,7 @@ export const createClientForAmbientKey = async (ambientClients: Map<string, ambi
             accountData.devices = toDb;
             accountData.save();
         }
+        console.log(`Created client for ambient key ${account.api_key}`);
     });
     client.on("data", (data) => {
         logAmbient(data);

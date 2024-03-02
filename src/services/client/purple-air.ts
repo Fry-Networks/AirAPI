@@ -21,37 +21,33 @@ class PurpleAirClient {
       obj_id: ObjectId,
       last_data: 0
     });
+    console.log(`Created client for read_key ${account.read_key}`);
+    let firstTime = true;
+    setInterval(async () => {
+      if (firstTime) {
+        firstTime = false;
+        return;
+      }
+
+      this.syncData(ObjectId, sensor, read_key, clients);
+    }, 300000);
   }
 
-  static async startClientSync(clients: PurpleClients) {
-    const accounts: PurpleAirAccount[] = await PurpleAirModel.find({
-      api_type: 'purple-air'
-    })
-    for (let account of accounts) {
-      try {
-        await this.createClient(clients, account._id);
-      } catch (e: any) {
-        console.log(
-          `Error creating client for key ${account.api_key} - ${e.stack}`
-        );
-      }
+  static async syncData(obj_id: string, sensor_id: string, read_key: string, clients: PurpleClients) {
+
+    const client = clients.get(obj_id)!;
+    const data: PurpleSensorData | undefined = await PurpleAirApi.fetchSensorData(sensor_id, read_key);
+    if (!data) {
+      console.log(`No data for sensor ${sensor_id}`);
+    } else if (data.sensor.last_seen > client.last_data) {
+      clients.set(obj_id, {
+        ...client,
+        last_data: data.sensor.last_seen
+      });
+      this.saveData(data);
     }
 
-  }
 
-  static async startDataSync(clients: PurpleClients) {
-    setInterval(async () => {
-      clients.forEach(async (client, ObjectId) => {
-        const data: PurpleSensorData | undefined = await PurpleAirApi.fetchSensorData(client.sensor, client.read_key, ObjectId);
-        if (data && data.time_stamp > client.last_data) {
-          clients.set(ObjectId, {
-            ...client,
-            last_data: data.time_stamp
-          });
-          this.saveData(data);
-        }
-      });
-    }, 300000);
   }
 
   static async saveData(data: PurpleSensorData) {
@@ -60,7 +56,7 @@ class PurpleAirClient {
         ...data,
         timestamp: data.time_stamp,
         metadata: {
-          type: 'purple-air',
+          data_type: 'purple-air',
           deviceMAC: data.sensor.primary_key_a,
           location: {
             lat: data.sensor.latitude,
@@ -70,8 +66,9 @@ class PurpleAirClient {
           }
         }
       });
-    await sensorData.save();
-    console.log(`Saved data for sensor ${data.sensor.sensor_index}`);
+    sensorData.save().then(() => {
+      console.log(`Saved data for sensor ${data.sensor.sensor_index}`);
+    });
 
   }
 

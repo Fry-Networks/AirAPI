@@ -26,19 +26,20 @@ router.post("/api/submitpurple", async function (req, res) {
      
       // Check if the key is valid by making a request to the API
       //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
-      const isValid = await PurpleAirApi.isValidApiKey(data.read_key)
+      const isValid = await PurpleAirApi.isValid(data.read_key, data.sensor_id)
       if(!isValid) { 
         return void res.status(400).send({
-          message: "Key is invalid. (Didn't pass API check)",
+          message: "Read key or invalid sensor ID. (Didn't pass API check)",
           status: "ERROR",
         });
       }
       // Add the key to the database
       const user = await getUserByAddress(data.address);
-  
+      console.log(data)
       const air_Account = new PurpleAirModel({
         read_key: data.read_key,
         user_id: user._id,
+        sensor: data.sensor_id,
         timestamp: new Date(),
         address: data.address,
         api_type: "purple-air",
@@ -48,10 +49,11 @@ router.post("/api/submitpurple", async function (req, res) {
   
       res.status(200).send({
         message:
-          "Successfully linked your API Key to your wallet address!\nWe will soon begin to retreive data from your air stations/devices.",
+          "Successfully linked your Purple air device to your wallet address!\nWe will soon begin to retreive data from your air stations/devices.",
         status: "SUCCESS",
       });
     } catch (e) {
+      console.log(e);
       res.status(500).send({
         message: "Internal server error.",
         status: "ERROR",

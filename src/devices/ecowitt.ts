@@ -46,6 +46,7 @@ export const createClientForEcoWittKey = async (clients: Map<string, string>, Ob
             account.save();
             devices = toDb;
         }
+        console.log(`Created client for ecowitt key ${account.api_key}`);
     } catch (error) {
         console.error(error);
     }

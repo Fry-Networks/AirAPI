@@ -9,11 +9,24 @@ class PebbleApi {
             pebble_device_record(limit: ${limit},  order_by: {timestamp: desc}, where: {imei: {_eq: "${imei}"}, latitude: {_neq: "200.0000000"}}
             ) {
                 latitude, longitude, timestamp
+                light
+                id
+                snr
+                vbat
+                humidity
+                pressure
+                gyroscope
+                temperature
+                gas_resistance
+                accelerometer
+                temperature2
+
+
               }
             }
         `
             const response: PebbleRawData = await request(this.url, query)
-            console.log(response)
+
             return response
         } catch (err: any) {
             console.log(err.message)
@@ -31,7 +44,7 @@ class PebbleApi {
             }
         `
             const response: PebbleRawData = await request(this.url, query)
-            console.log(response)
+    
             return response
         } catch (err: any) {
             console.log(err.message)
@@ -45,19 +58,25 @@ class PebbleApi {
             pebble_device_record (limit: 1, where: {imei: {_eq: "${imei}"}}) {
                 id
                 }
+            }
         `
             const response: { pebble_device_record: { id: string }[] } = await request(this.url, query)
+   
             if (response.pebble_device_record.length === 0) {
                 return false
             }
             const deviceId = response.pebble_device_record[0].id.split('-')[0]
+            
             const query2 = gql`
         query {
             pebble_device (limit: 1, where: {id: {_like: "${deviceId}%"}}) {
                 owner
                 }
+            }
         `
+    
             const response2: { pebble_device: { owner: string }[] } = await request(this.url, query2)
+        
             return response2.pebble_device[0].owner.toLowerCase() === owner.toLowerCase()
 
         } catch (err: any) {
@@ -112,3 +131,5 @@ query  {
       }
   }
   */
+
+ 

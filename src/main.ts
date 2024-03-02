@@ -20,20 +20,22 @@ const startApp = async () => {
   for (let account of ambientApiKeys) {
     try {
       await createClientForAmbientKey(ambientClients, account._id);
+      
     }
     catch (e: any) {
-      console.log(`Error creating client for key ${account.api_key} - ${e.stack}`);
+      console.log(`Error creating client for ambient key ${account.api_key} - ${e.stack}`);
     }
   }
 
   // Handling for PurpleAir devices
-  const purpleAirApiKeys: PurpleAirAccount[] = await PurpleAirModel.find({ api_type: "purpleair" });
+  const purpleAirApiKeys: PurpleAirAccount[] = await PurpleAirModel.find({ api_type: "purple-air" });
   for (let account of purpleAirApiKeys) {
     try {
       await PurpleAirClient.createClient(purpleairClients, account._id);
+   
     }
     catch (e: any) {
-      console.log(`Error creating client for key ${account.api_key} - ${e.stack}`);
+      console.log(`Error creating client for read_key ${account.read_key} - ${e.stack}`);
     }
   }
 
@@ -43,9 +45,10 @@ const startApp = async () => {
   for (const account of ecoapiKeys) {
     try {
       await createClientForEcoWittKey(ecowittClients, account._id);
+      
     }
     catch (e: any) {
-      console.log(`Error creating client for key ${account.api_key} - ${e.stack}`);
+      console.log(`Error creating client for ecowitt key ${account.api_key} - ${e.stack}`);
     }
   }
 
@@ -54,9 +57,10 @@ const startApp = async () => {
   for (const account of pebbleApiKeys) {
     try {
       await PebbleClient.createClient(pebbleClients, account._id);
+     
     }
     catch (e: any) {
-      console.log(`Error creating client for key ${account.api_key} - ${e.stack}`);
+      console.log(`Error creating client for imei ${account.imei} - ${e.stack}`);
     }
   }
 
