@@ -54,7 +54,7 @@ class PurpleAirClient {
     const sensorData = new PurpleAirDataModel(
       {
         ...data,
-        timestamp: data.time_stamp,
+        timestamp: data.time_stamp*1000,
         metadata: {
           data_type: 'purple-air',
           deviceMAC: data.sensor.primary_key_a,
