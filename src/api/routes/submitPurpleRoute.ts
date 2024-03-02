@@ -19,7 +19,7 @@ router.post("/api/submitpurple", async function (req, res) {
   
       if (isPresent) {
         return void res.status(409).send({
-          message: "Key already exists in database.",
+          message: "Sensor already exists in database.",
           status: "ERROR",
         });
       }

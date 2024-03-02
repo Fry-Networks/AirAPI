@@ -82,6 +82,7 @@ const startApp = async () => {
 
   newApiKeyEvent.on("deleteApiKey", async (ObjectId: string) => {
     const findedApikey = await AirAccountModel.findById(ObjectId);
+    console.log(findedApikey)
     if (findedApikey?.api_type === "ecowitt") {
       ecowittClients.delete(ObjectId);
     } else if (findedApikey?.api_type === "purple-air") {
