@@ -1,7 +1,7 @@
 
 import PurpleAirApi from "../../services/api/purple-air.js";
 import { PurpleAirAccount, PurpleAirModel } from "../../db/models/air_accounts.js";
-import { PurpleAirDataModel, PurpleSensorData } from "db/models/air_data.js";
+import { PurpleAirDataModel, PurpleSensorData } from "../../db/models/air_data.js";
 
 class PurpleAirClient {
 

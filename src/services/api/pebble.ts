@@ -1,7 +1,5 @@
-import axios, { AxiosError } from "axios";
-import { PurpleAirModel } from "../../db/models/air_accounts.js";
 import { request, gql } from 'graphql-request'
-import { PebbleData } from "db/models/air_data.js";
+import { PebbleData } from "../../db/models/air_data.js";
 class PebbleApi {
     static url = 'https://pebble.iotex.me/v1/graphql';
     static async getPebbleDataByImei(imei: string, limit = 1): Promise<PebbleRawData | undefined> {

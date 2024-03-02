@@ -3,7 +3,7 @@ import { AmbientModel, PebbleModel } from "../../db/models/air_accounts.js";
 import axios from "axios";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 import { newApiKeyEvent } from "../../db/connect.js";
-import PebbleApi from "services/api/pebble.js";
+import PebbleApi from "../../services/api/pebble.js";
 
 const router = express.Router();
 

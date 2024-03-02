@@ -1,5 +1,5 @@
-import { PebbleAccount, PebbleModel } from "db/models/air_accounts";
-import { PebbleData, PebbleDataModel } from "db/models/air_data";
+import { PebbleAccount, PebbleModel } from "../../db/models/air_accounts";
+import { PebbleData, PebbleDataModel } from "../../db/models/air_data";
 import PebbleApi from "services/api/pebble";
 
 
