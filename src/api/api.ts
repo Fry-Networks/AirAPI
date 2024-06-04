@@ -1,11 +1,15 @@
-import express from "express";
 import bodyparser from "body-parser";
+import express from "express";
 import { rateLimit } from "express-rate-limit";
 import { connect } from "../db/connect.js";
 import submitKeyRoute from "./routes/submitAmbientRoute.js";
+import submitAtmotubeRoute from "./routes/submitAtmotubeRoute.js";
+import submitAwairRoute from "./routes/submitAwairRoute.js";
 import submitEcoKeyRoute from "./routes/submitEcoKeyRoute.js";
-import submitPurpleRoute from "./routes/submitPurpleRoute.js";
+import submitKaiterraRoute from "./routes/submitKaiterraRoute.js";
+import submitNRFRoute from "./routes/submitNRFRoute.js";
 import submitPebbleRoute from "./routes/submitPebbleRoute.js";
+import submitPurpleRoute from "./routes/submitPurpleRoute.js";
 
 const app = express();
 app.use(bodyparser.json());
@@ -37,7 +41,11 @@ app.get("/", function (req, res) {
 app.use(submitKeyRoute);
 app.use(submitEcoKeyRoute);
 app.use(submitPurpleRoute);
-app.use(submitPebbleRoute)
+app.use(submitPebbleRoute);
+app.use(submitNRFRoute);
+app.use(submitAtmotubeRoute);
+app.use(submitKaiterraRoute);
+app.use(submitAwairRoute);
 
 export async function startApi() {
   await connect();
