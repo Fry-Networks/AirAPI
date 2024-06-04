@@ -38,6 +38,7 @@
     "@types/node": "^20.3.3",
     "@types/ssh2-sftp-client": "^9.0.0",
     "nodemon": "^3.0.1",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
   }
 }
