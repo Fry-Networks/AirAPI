@@ -19,13 +19,19 @@ const kaiterraSchema = new mongoose.Schema({
     deviceId: { type: String, required: true },
     token: String,
     walletAddress: String,
-    data: [dataSchema]
+    data: [dataSchema],
+    metadata: {
+        data_type: String,
+    }
 }, { timestamps: true });
 
 // Define the schema for historical records
 const historicalKaiterraSchema = new mongoose.Schema({
     deviceId: { type: String, required: true },
     data: [dataSchema],
+    metadata: {
+        data_type: String,
+    },
     timestamp: { type: Date, default: Date.now }
 });
 

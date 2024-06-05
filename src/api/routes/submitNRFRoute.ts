@@ -40,10 +40,13 @@ const fetchDataAndUpdate = async () => {
                         firmware: newData.firmware,
                         cloudMqttEnabled: newData.cloudMqttEnabled,
                         state: newData.state,
-                        metadata: {
+                        metaStateData: {
                             desired: newData.state.metadata?.desired,
                             reported: newData.state.metadata?.reported,
                             version: newData.state.version
+                        },
+                        metadata: {
+                            data_type: 'nrf',
                         }
                     },
                     { upsert: true }
@@ -55,7 +58,6 @@ const fetchDataAndUpdate = async () => {
                     timestamp: new Date(), // Add timestamp for historical data
                     metadata: {
                         data_type: "nrf",
-                        deviceId: newData.id
                     }
                 });
 
@@ -111,10 +113,13 @@ router.post("/api/submitNRF", async (req, res) => {
                 firmware: deviceData.firmware,
                 cloudMqttEnabled: deviceData.cloudMqttEnabled,
                 state: deviceData.state,
-                metadata: {
+                metaStateData: {
                     desired: deviceData.state.metadata?.desired,
                     reported: deviceData.state.metadata?.reported,
                     version: deviceData.state.version
+                },
+                metadata: {
+                    data_type: 'nrf',
                 }
             });
 

@@ -17,6 +17,9 @@ const apiDataSchema = new mongoose.Schema({
     data: {
         total: { type: Number, required: true },
         items: [itemSchema]
+    },
+    metadata: {
+        data_type: String,
     }
 }, { timestamps: true });
 

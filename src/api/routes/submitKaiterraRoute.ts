@@ -42,7 +42,10 @@ const fetchDataAndUpdate = async () => {
                 const historicalData = new HistoricalKaiterra({
                     deviceId: newData.id,
                     data: mappedData,
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    metadata: {
+                      data_type: 'Kaiterra',
+                    }
                 });
 
                 await historicalData.save();
@@ -96,6 +99,9 @@ router.post("/api/submitKaiterra", async (req: any, res: any) => {
         token: token,
         walletAddress: address,
         data: mappedData,
+        metadata: {
+          data_type: 'Kaiterra',
+        }
       });
 
       await newData.save();

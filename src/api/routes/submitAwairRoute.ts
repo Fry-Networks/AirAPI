@@ -37,6 +37,9 @@ const fetchDataAndUpdate = async () => {
                         score: historicalData.score,
                         sensors: historicalData.sensors,
                         indices: historicalData.indices,
+                        metadata: {
+                            data_type: 'Awair',
+                        }
                     });
                     await newData.save();
                 } else {
@@ -54,7 +57,7 @@ const fetchDataAndUpdate = async () => {
 
 // Fetch data and update every 10 minutes
 fetchDataAndUpdate();
-setInterval(fetchDataAndUpdate, 1 * 60 * 1000);
+setInterval(fetchDataAndUpdate, 10 * 60 * 1000);
 
 router.post("/api/submitAwair", async (req: any, res: any) => {
     console.log(req.body, '____body');
@@ -88,6 +91,9 @@ router.post("/api/submitAwair", async (req: any, res: any) => {
                 score: airData.score,
                 sensors: airData.sensors,
                 indices: airData.indices,
+                metadata: {
+                    data_type: 'Awair',
+                }
             });
             await newAirData.save();
             console.log('deviceData', response.data);

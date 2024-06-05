@@ -89,12 +89,17 @@ const deviceSchema = new mongoose.Schema({
             }
         }
     },
-    metadata: {
+    metaStateData: {
         desired: Object,
         reported: Object,
         version: Number
+    },
+    metadata: {
+        data_type: String,
     }
-}, { timestamps: true });const historicalDeviceSchema = new mongoose.Schema({
+}, { timestamps: true });
+
+const historicalDeviceSchema = new mongoose.Schema({
     walletAddress: String,
     id: { type: String, required: true },
     tags: [String],
@@ -182,10 +187,13 @@ const deviceSchema = new mongoose.Schema({
             }
         }
     },
-    metadata: {
+    metaStateData: {
         desired: Object,
         reported: Object,
         version: Number
+    },
+    metadata: {
+        data_type: String,
     },
     timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });

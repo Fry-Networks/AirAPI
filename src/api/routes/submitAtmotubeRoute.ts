@@ -47,6 +47,9 @@ router.post("/api/submitAtmotube", async (req: any, res: any) => {
             p: item.p,
           })),
         },
+        metadata: {
+          data_type: 'Atmotube',
+        }
       });
 
       await AtmotubeData.save();

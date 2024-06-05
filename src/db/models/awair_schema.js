@@ -36,6 +36,9 @@ const awairDataSchema = new mongoose.Schema({
       },
     },
   ],
+  metadata: {
+    data_type: String,
+}
 });
 
 // Define the schema for historical records
@@ -73,6 +76,9 @@ const awairHistoryDataSchema = new mongoose.Schema({
           },
         },
       ],
+      metadata: {
+        data_type: String,
+    }
 });
 
 export const Awair = mongoose.model("Awair", awairDataSchema);
