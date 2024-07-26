@@ -6,10 +6,13 @@ import submitKeyRoute from "./routes/submitAmbientRoute.js";
 import submitAtmotubeRoute from "./routes/submitAtmotubeRoute.js";
 import submitAwairRoute from "./routes/submitAwairRoute.js";
 import submitEcoKeyRoute from "./routes/submitEcoKeyRoute.js";
+import submitGoveeKey from "./routes/submitGoveeRoute.js";
 import submitKaiterraRoute from "./routes/submitKaiterraRoute.js";
 import submitNRFRoute from "./routes/submitNRFRoute.js";
 import submitPebbleRoute from "./routes/submitPebbleRoute.js";
 import submitPurpleRoute from "./routes/submitPurpleRoute.js";
+import submitSensecapRoute from "./routes/submitSensecapRoute.js";
+
 
 const app = express();
 app.use(bodyparser.json());
@@ -46,6 +49,8 @@ app.use(submitNRFRoute);
 app.use(submitAtmotubeRoute);
 app.use(submitKaiterraRoute);
 app.use(submitAwairRoute);
+app.use(submitGoveeKey);
+app.use(submitSensecapRoute);
 
 export async function startApi() {
   await connect();

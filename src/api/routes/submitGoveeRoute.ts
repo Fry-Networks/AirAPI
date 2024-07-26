@@ -1,0 +1,130 @@
+import axios from 'axios';
+import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import { newApiKeyEvent } from '../../db/connect.js';
+import { GoveeAccount, HistoricalGoveeAccount } from '../../db/models/govee_schema.js';
+import { getUserByAddress } from '../../db/models/users-schema.js';
+
+const router = express.Router();
+
+router.post('/api/submitGoveeKey', async function (req, res) {
+  try {
+    const data = req.body;
+    console.log(data, 'Govee data');
+    
+    const existingKey = await GoveeAccount.exists({ api_key: data.apiKey });
+
+    if (existingKey) {
+      return res.status(409).send({
+        message: 'API Key already exists in the database.',
+        status: 'ERROR',
+      });
+    }
+
+    const response = await axios.post(
+      'https://openapi.api.govee.com/router/api/v1/device/state',
+      {
+        requestId: uuidv4(),
+        payload: {
+          sku: 'H5100',
+          device: data.deviceId,
+        },
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Govee-API-Key': data.apiKey,
+        },
+      }
+    );
+    console.log(response.data, 'API response');
+
+    const apiResponse = response.data;
+
+    if (apiResponse.code !== 200) {
+      return res.status(400).send({
+        message: 'Key is invalid. (Did not pass API check)',
+        status: 'ERROR',
+      });
+    }
+    
+    const user = await getUserByAddress(data.address);
+
+    const goveeAccount = new GoveeAccount({
+      api_key: data.apiKey,
+      user_id: user._id,
+      timestamp: new Date(),
+      api_type: 'govee',
+      device_id: data.deviceId,
+      sku: data.sku,
+      walletAddress: data.address,
+      capabilities: apiResponse.payload.capabilities,
+    });
+
+    await goveeAccount.save();
+    newApiKeyEvent.emit('newApiKey', goveeAccount._id);
+
+    res.status(200).send({
+      message: 'Successfully linked your API Key to your wallet address!',
+      status: 'SUCCESS',
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send({
+      message: 'Internal server error.',
+      status: 'ERROR',
+    });
+  }
+});
+
+async function fetchDataDynamically() {
+  try {
+    const accounts = await GoveeAccount.find();
+
+    for (const account of accounts) {
+      const { api_key, device_id, sku } = account;
+
+      // Fetch latest state from Govee API
+      const response = await axios.post(
+        'https://openapi.api.govee.com/router/api/v1/device/state',
+        {
+          requestId: 'uuid', // Generate a unique UUID for each request
+          payload: {
+            sku: sku,
+            device: device_id,
+          },
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Govee-API-Key': api_key,
+          },
+        }
+      );
+
+      const apiResponse = response.data;
+
+      if (apiResponse.code === 200) {
+        // Save the historical state in the database
+        const historicalAccount = new HistoricalGoveeAccount({
+          api_key: api_key,
+          device_state: apiResponse.payload,
+          timestamp: new Date(),
+        });
+
+        await historicalAccount.save();
+
+        console.log(`Updated device state for API Key: ${api_key}`);
+      } else {
+        console.error(`Error fetching device state for API Key: ${api_key}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching or updating Govee data:', error);
+  }
+}
+
+// Set interval for periodic data fetching (every 10 minutes)
+setInterval(fetchDataDynamically, 10 * 60 * 1000);
+
+export default router;
