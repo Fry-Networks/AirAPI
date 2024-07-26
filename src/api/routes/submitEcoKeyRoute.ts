@@ -8,10 +8,10 @@ const router = express.Router();
 
 router.post("/api/submitEcokey", async function (req, res) {
   try {
-    const data = req.body;
+    const data: {key: string, app_key: string, address: string} = req.body;
     console.log(data,'ecowitt data')
     const existingKey = await Ecowittmodel.exists({
-      api_key: data.apiKey,
+      api_key: data.key,
     });
 
     if (existingKey) {
@@ -22,7 +22,7 @@ router.post("/api/submitEcokey", async function (req, res) {
     }
 
     const existingAppKey = await Ecowittmodel.exists({
-      app_key: data.appKey,
+      app_key: data.app_key,
     });
 
     if (existingAppKey) {
@@ -33,7 +33,7 @@ router.post("/api/submitEcokey", async function (req, res) {
     }
 
     const response = await axios.get(
-      `https://api.ecowitt.net/api/v3/device/list?application_key=${data.app_key}&api_key=${data.apiKey}`
+      `https://api.ecowitt.net/api/v3/device/list?application_key=${data.app_key}&api_key=${data.key}`
     );
     console.log(response,'url')
 
@@ -61,7 +61,7 @@ router.post("/api/submitEcokey", async function (req, res) {
     }));
 
     const ecowittAccount = new Ecowittmodel({
-      api_key: data.apiKey,
+      api_key: data.key,
       user_id: user._id,
       timestamp: new Date(),
       api_type: "ecowitt",
