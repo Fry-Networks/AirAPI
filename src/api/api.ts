@@ -11,7 +11,7 @@ import submitKaiterraRoute from "./routes/submitKaiterraRoute.js";
 import submitNRFRoute from "./routes/submitNRFRoute.js";
 import submitPebbleRoute from "./routes/submitPebbleRoute.js";
 import submitPurpleRoute from "./routes/submitPurpleRoute.js";
-
+import submitSenseCAPRoute from './routes/submitSensecapRoute.js';
 
 const app = express();
 app.use(bodyparser.json());
@@ -49,6 +49,7 @@ app.use(submitAtmotubeRoute);
 app.use(submitKaiterraRoute);
 app.use(submitAwairRoute);
 app.use(submitGoveeKey);
+app.use(submitSenseCAPRoute);
 
 export async function startApi() {
   await connect();
