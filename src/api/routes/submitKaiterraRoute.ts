@@ -1,10 +1,8 @@
 import axios from "axios";
 import express, { Request, Response } from "express";
+import { getCollectionByMinerKey } from "../../db/models/data.js";
 import { DataItem, Point, RequestBody } from "types/kaiterraTypes.js";
-import {
-  HistoricalKaiterra,
-  Kaiterra,
-} from "../../db/models/kaiterra_schema.js";
+import { Kaiterra, KaiterraData } from "../../db/models/kaiterra_schema.js";
 
 const router = express.Router();
 
@@ -13,7 +11,7 @@ const fetchDataAndUpdate = async () => {
     const kaiterraDevices = await Kaiterra.find();
 
     for (const device of kaiterraDevices) {
-      const { deviceId, token, walletAddress } = device;
+      const { miner_key, deviceId, token, walletAddress } = device;
 
       const url = `https://api.kaiterra.cn/v1/devices/${deviceId}/top?key=${token}`;
       const response = await axios.get(url);
@@ -30,6 +28,7 @@ const fetchDataAndUpdate = async () => {
       }));
 
       const existingData = await Kaiterra.findOne({ deviceId: newData.id });
+      const DataCollection = await getCollectionByMinerKey(miner_key);
 
       if (
         existingData &&
@@ -44,21 +43,26 @@ const fetchDataAndUpdate = async () => {
           },
           { upsert: true }
         );
-
-        // Save historical data in HistoricalKaiterra collection
-        const historicalData = new HistoricalKaiterra({
-          deviceId: newData.id,
-          data: mappedData,
-          timestamp: new Date(),
-          metadata: {
-            data_type: "Kaiterra",
-          },
-        });
-
-        await historicalData.save();
       }
-    }
 
+      const dataObject = {
+        deviceId: newData.id,
+        data: mappedData,
+        timestamp: new Date(),
+        metadata: {
+          data_type: "Kaiterra",
+        },
+      } as KaiterraData;
+
+      const data = new DataCollection({
+        miner_key,
+        status: Object.keys(newData.data).length === 0 ? 'offline' : 'online',
+        deviceDataString: dataObject,
+        timestamp: new Date(),
+      });
+
+      await data.save();
+    }
     console.log("Kaiterra Data fetch and update completed.");
   } catch (error) {
     console.error("Error fetching or updating data:", error);
@@ -74,9 +78,9 @@ router.post(
   async (req: Request<{}, {}, RequestBody>, res: Response) => {
     console.log(req.body, "____body");
     try {
-      const { token, deviceId, address } = req.body;
+      const { miner_key, token, deviceId, address } = req.body;
 
-      if (!token || !deviceId || !address) {
+      if (!miner_key || !token || !deviceId || !address) {
         return res
           .status(400)
           .send({
@@ -112,6 +116,7 @@ router.post(
 
         // Create a new document with the mapped data
         const newData = new Kaiterra({
+          miner_key: miner_key,
           deviceId: deviceId,
           token: token,
           walletAddress: address,

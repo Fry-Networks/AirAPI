@@ -2,7 +2,8 @@ import axios from 'axios';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { newApiKeyEvent } from '../../db/connect.js';
-import { GoveeAccount, HistoricalGoveeAccount } from '../../db/models/govee_schema.js';
+import { getCollectionByMinerKey } from "../../db/models/data.js";
+import { GoveeAccount, GoveeData } from '../../db/models/govee_schema.js';
 import { getUserByAddress } from '../../db/models/users-schema.js';
 
 const router = express.Router();
@@ -51,6 +52,7 @@ router.post('/api/submitGoveeKey', async function (req, res) {
     const user = await getUserByAddress(data.address);
 
     const goveeAccount = new GoveeAccount({
+      miner_key: data.miner_key,
       api_key: data.apiKey,
       user_id: user._id,
       timestamp: new Date(),
@@ -82,7 +84,7 @@ async function fetchDataDynamically() {
     const accounts = await GoveeAccount.find();
 
     for (const account of accounts) {
-      const { api_key, device_id, sku } = account;
+      const { miner_key, api_key, device_id, sku } = account;
 
       // Fetch latest state from Govee API
       const response = await axios.post(
@@ -105,14 +107,25 @@ async function fetchDataDynamically() {
       const apiResponse = response.data;
 
       if (apiResponse.code === 200) {
-        // Save the historical state in the database
-        const historicalAccount = new HistoricalGoveeAccount({
+        const DataCollection = await getCollectionByMinerKey(miner_key);
+
+        const dataObject = {
           api_key: api_key,
           device_state: apiResponse.payload,
           timestamp: new Date(),
+          metadata: {
+            data_type: "Govee",
+          }
+        } as GoveeData;
+
+        const data = new DataCollection({
+          miner_key,
+          status: apiResponse === null ? 'offline' : 'online',
+          deviceDataString: dataObject,
+          timestamp: new Date(),
         });
 
-        await historicalAccount.save();
+        await data.save();
 
         console.log(`Updated device state for API Key: ${api_key}`);
       } else {

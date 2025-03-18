@@ -1,6 +1,7 @@
 import axios from "axios";
 import express from "express";
-import { Awair, HistoricalAwair } from "../../db/models/awair_schema.js";
+import { getCollectionByMinerKey } from "../../db/models/data.js";
+import { Awair, AwairData } from "../../db/models/awair_schema.js";
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ const fetchDataAndUpdate = async () => {
         const AwairDevices = await Awair.find();
 
         for (const device of AwairDevices) {
-            const { deviceId, token } = device;
+            const { miner_key, deviceId, token } = device;
 
             const url = `https://developer-apis.awair.is/v1/users/self/devices/awair-element/${deviceId}/air-data/latest`;
             try {
@@ -19,32 +20,27 @@ const fetchDataAndUpdate = async () => {
                     }
                 });
                 const historicalData = response.data.data[0];
+                const DataCollection = await getCollectionByMinerKey(miner_key);
 
-                // Retrieve the latest entry from HistoricalAwair collection
-                const latestEntry = await HistoricalAwair.findOne({ deviceId: deviceId }).sort({ timestamp: -1 });
+                const dataObject = {
+                    deviceId: deviceId,
+                    timestamp: new Date(historicalData.timestamp),
+                    score: historicalData.score,
+                    sensors: historicalData.sensors,
+                    indices: historicalData.indices,
+                    metadata: {
+                        data_type: 'Awair',
+                    }
+                } as AwairData;
 
-                // Check if the data has changed
-                const hasDataChanged = !latestEntry || 
-                    latestEntry.score !== historicalData.score || 
-                    JSON.stringify(latestEntry.sensors) !== JSON.stringify(historicalData.sensors) || 
-                    JSON.stringify(latestEntry.indices) !== JSON.stringify(historicalData.indices);
+                const newData = new DataCollection({
+                    miner_key,
+                    status: historicalData === null ? 'offline' : 'online',
+                    deviceDataString: dataObject,
+                    timestamp: new Date(),
+                });
 
-                if (hasDataChanged) {
-                    // Save historical data in HistoricalAwair collection
-                    const newData = new HistoricalAwair({
-                        deviceId: deviceId,
-                        timestamp: new Date(historicalData.timestamp),
-                        score: historicalData.score,
-                        sensors: historicalData.sensors,
-                        indices: historicalData.indices,
-                        metadata: {
-                            data_type: 'Awair',
-                        }
-                    });
-                    await newData.save();
-                } else {
-                    console.log(`No changes detected for Awair device ${deviceId}`);
-                }
+                await newData.save();
             } catch (error) {
                 console.error("Error fetching or updating Awair data:", error);
             }
@@ -62,7 +58,7 @@ setInterval(fetchDataAndUpdate, 10 * 60 * 1000);
 router.post("/api/submitAwair", async (req: any, res: any) => {
     console.log(req.body, '____body');
     try {
-        const { token, deviceId, address } = req.body;
+        const { miner_key, token, deviceId, address } = req.body;
         // Check if the device already exists in the database
         const existingDevice = await Awair.findOne({ deviceId: deviceId });
         if (existingDevice) {
@@ -84,6 +80,7 @@ router.post("/api/submitAwair", async (req: any, res: any) => {
             const airData = response.data.data[0];
 
             const newAirData = new Awair({
+                miner_key: miner_key,
                 walletAddress: address,
                 deviceId: deviceId,
                 token: token,

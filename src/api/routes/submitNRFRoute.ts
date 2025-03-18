@@ -1,7 +1,8 @@
 import axios from "axios";
 import express, { Request, Response } from "express";
 import { RequestBody } from "types/nrfTypes.js";
-import { HistoricalNrf, Nrf } from "../../db/models/nrf_schema.js";
+import { getCollectionByMinerKey } from "../../db/models/data.js";
+import { NrfData, Nrf } from "../../db/models/nrf_schema.js";
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ const fetchDataAndUpdate = async () => {
         const nrfDevices = await Nrf.find();
 
         for (const device of nrfDevices) {
-            const { id, walletAddress, token } = device;
+            const { miner_key, id, walletAddress, token } = device;
 
             const response = await axios.get(
                 `https://api.nrfcloud.com/v1/devices/${id}`,
@@ -58,20 +59,43 @@ const fetchDataAndUpdate = async () => {
                     },
                     { upsert: true }
                 );
-
-                // Save historical data in HistoricalNrf collection
-                const historicalData = new HistoricalNrf({
-                    ...newData,
-                    timestamp: new Date(), // Add timestamp for historical data
-                    metadata: {
-                        data_type: "nrf",
-                    },
-                });
-
-                await historicalData.save();
             }
-        }
 
+            const DataCollection = await getCollectionByMinerKey(miner_key);
+            const dataObject = {
+                id: newData.id,
+                tags: newData.tags,
+                tenantId: newData.tenantId,
+                meta: {
+                    updatedAt: newData.$meta.updatedAt,
+                    createdAt: newData.$meta.createdAt,
+                },
+                name: newData.name,
+                type: newData.type,
+                subType: newData.subType,
+                firmware: newData.firmware,
+                cloudMqttEnabled: newData.cloudMqttEnabled,
+                state: newData.state,
+                metaStateData: {
+                    desired: newData.state.metadata?.desired,
+                    reported: newData.state.metadata?.reported,
+                    version: newData.state.version,
+                },
+                timestamp: new Date(),
+                metadata: {
+                  data_type: "Nrf",
+                },
+            } as NrfData;
+
+            const data = new DataCollection({
+                miner_key,
+                status: newData === null ? 'offline' : 'online',
+                deviceDataString: dataObject,
+                timestamp: new Date(),
+            });
+
+            await data.save();
+        }
         console.log("Data fetch and update completed.");
     } catch (error) {
         console.error("Error fetching or updating data:", error);
@@ -86,9 +110,9 @@ router.post(
     async (req: Request<{}, {}, RequestBody>, res: Response) => {
         console.log(req.body, "____body");
         try {
-            const { token, deviceId, address } = req.body;
+            const { miner_key, token, deviceId, address } = req.body;
 
-            if (!token || !deviceId || !address) {
+            if (!miner_key || !token || !deviceId || !address) {
                 return res
                     .status(400)
                     .send({
@@ -119,6 +143,7 @@ router.post(
                 const deviceData = response.data;
                 console.log("deviceData", deviceData);
                 const device = new Nrf({
+                    miner_key,
                     token: token,
                     walletAddress: address,
                     id: deviceData.id,
@@ -145,18 +170,6 @@ router.post(
                 });
 
                 await device.save();
-
-                // Also save the same data in the HistoricalNrf collection
-                const historicalDevice = new HistoricalNrf({
-                    ...deviceData,
-                    timestamp: new Date(), // Add timestamp for historical data
-                    metadata: {
-                        data_type: "nrf",
-                        deviceId: deviceData.id,
-                    },
-                });
-
-                await historicalDevice.save();
 
                 res.status(200).send({
                     message: "Device information retrieved successfully.",
