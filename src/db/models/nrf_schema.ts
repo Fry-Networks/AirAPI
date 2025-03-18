@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const deviceSchema = new mongoose.Schema({
+    miner_key: { type: String, required: true },
     token: String,
     walletAddress: String,
     id: { type: String, required: true },
@@ -198,7 +199,103 @@ const historicalDeviceSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-export const HistoricalNrf = mongoose.model('HistoricalNrf', historicalDeviceSchema);
+export interface NrfData extends mongoose.Document {
+    id: string,
+    tags: [string],
+    tenantId: string,
+    meta: {
+        updatedAt: Date,
+        createdAt: Date
+    },
+    name: string,
+    type: string,
+    subType: string,
+    firmware: {
+        supports: [string],
+        app: {
+            name: string,
+            version: string
+        },
+        modem: string
+    },
+    cloudMqttEnabled: boolean,
+    state: {
+        desired: {
+            pairing: {
+                state: string,
+                topics: {
+                    d2c: string,
+                    c2d: string
+                }
+            },
+            nrfcloud_mqtt_topic_prefix: string
+        },
+        reported: {
+            connection: {
+                status: string,
+                keepalive: number,
+            },
+            config: {
+                activeMode: boolean,
+                locationTimeout: number,
+                activeWaitTime: number,
+                movementResolution: number,
+                movementTimeout: number,
+                accThreshAct: number,
+                accThreshInact: number,
+                accTimeoutInact: number,
+                nod: [string]
+            },
+            pairing: {
+                state: string,
+                topics: {
+                    d2c: string,
+                    c2d: string
+                }
+            },
+            nrfcloud_mqtt_topic_prefix: string,
+            device: {
+                deviceInfo: {
+                    appVersion: string,
+                    modemFirmware: string,
+                    imei: string,
+                    board: string,
+                    sdkVer: string,
+                    appName: string,
+                    zephyrVer: string,
+                    hwVer: string
+                },
+                simInfo: {
+                    uiccMode: number,
+                    iccid: string,
+                    imsi: string
+                },
+                serviceInfo: {
+                    fota_v2: [string],
+                    ui: [string]
+                },
+                networkInfo: {
+                    currentBand: number,
+                    networkMode: string,
+                    rsrp: number,
+                    areaCode: number,
+                    mccmnc: string,
+                    cellID: number,
+                    ipAddress: string
+                }
+            }
+        }
+    },
+    metaStateData: {
+        desired: object,
+        reported: object,
+        version: number
+    },
+    metadata: {
+        data_type: string,
+    },
+    timestamp: Date,
+};
 
 export const Nrf = mongoose.model('Nrf', deviceSchema);
 

@@ -54,12 +54,12 @@ class PebbleApi {
     static async verifyOwnership(imei: string, owner: string): Promise<boolean> {
         try {
             const query = gql`
-        query {
-            pebble_device_record (limit: 1, where: {imei: {_eq: "${imei}"}}) {
-                id
-                }
-            }
-        `
+                query {
+                    pebble_device_record (limit: 1, where: {imei: {_eq: "${imei}"}}) {
+                        id
+                        }
+                    }
+                `
             const response: { pebble_device_record: { id: string }[] } = await request(this.url, query)
    
             if (response.pebble_device_record.length === 0) {
@@ -68,12 +68,12 @@ class PebbleApi {
             const deviceId = response.pebble_device_record[0].id.split('-')[0]
             
             const query2 = gql`
-        query {
-            pebble_device (limit: 1, where: {id: {_like: "${deviceId}%"}}) {
-                owner
-                }
-            }
-        `
+                query {
+                    pebble_device (limit: 1, where: {id: {_like: "${deviceId}%"}}) {
+                        owner
+                        }
+                    }
+                `
     
             const response2: { pebble_device: { owner: string }[] } = await request(this.url, query2)
         

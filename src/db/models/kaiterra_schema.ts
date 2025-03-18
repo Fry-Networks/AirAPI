@@ -16,6 +16,7 @@ const dataSchema = new mongoose.Schema({
 
 // Define the main schema
 const kaiterraSchema = new mongoose.Schema({
+    miner_key: { type: String, required: true },
     deviceId: { type: String, required: true },
     token: String,
     walletAddress: String,
@@ -25,17 +26,26 @@ const kaiterraSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-// Define the schema for historical records
-const historicalKaiterraSchema = new mongoose.Schema({
-    deviceId: { type: String, required: true },
-    data: [dataSchema],
+export interface KaiterraData extends mongoose.Document {
+    deviceId: string,
+    timestamp: Date,
+    data: [
+        {
+            param: string,
+            units: string,
+            span: number,
+            points: [
+                {
+                    ts: Date,
+                    value: number,
+                }
+            ]
+        }
+    ],
     metadata: {
-        data_type: String,
-    },
-    timestamp: { type: Date, default: Date.now }
-});
+        data_type: string,
+    }
+}
 
 export const Kaiterra = mongoose.model('Kaiterra', kaiterraSchema);
-export const HistoricalKaiterra = mongoose.model('HistoricalKaiterra', historicalKaiterraSchema);
-
 

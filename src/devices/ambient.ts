@@ -1,7 +1,8 @@
 // Ambient Miner File
 import ambient, { Device } from "ambient-weather-api";
 import { AirAccountModel, AmbientAccount, AmbientModel } from "../db/models/air_accounts.js";
-import { AmbientDataModel } from "../db/models/air_data.js";
+import { AmbientData, AmbientDataModel } from "../db/models/air_data.js";
+import { getCollectionByMinerKey } from "../db/models/data.js";
 const ambientApplicationKey = process.env.AW_APPLICATION_KEY!;
 
 export const createClientForAmbientKey = async (ambientClients: Map<string, ambient>, ObjectId: string) => {
@@ -47,19 +48,20 @@ export const createClientForAmbientKey = async (ambientClients: Map<string, ambi
             accountData.devices = toDb;
             accountData.save();
         }
-        console.log(`Created client for ambient key ${account.api_key}`);
+        // console.log(`Created client for ambient key ${account.api_key}`);
     });
-    client.on("data", (data) => {
-        logAmbient(data);
+    client.on("data", async (data) => {
+        const DataCollection = await getCollectionByMinerKey(account.miner_key);
+        logAmbient(data, DataCollection, account.miner_key, account.api_key);
     });
 
     ambientClients.set(ObjectId, client);
     return;
 };
 
-const logAmbient = async (data: any & { device: ambient.Device }) => {
-    const toDb = new AmbientDataModel({
-        timestamp: new Date(data.dateutc),
+const logAmbient = async (data: any & { device: ambient.Device }, DataCollection: any, miner_key: string, api_key: string) => {
+
+    const newData = {
         pm25: data.pm25,
         pm25_24h: data.pm25_24h,
         pm25_in: data.pm25_in,
@@ -91,15 +93,27 @@ const logAmbient = async (data: any & { device: ambient.Device }) => {
         winddir_avg2m: data.winddir_avg2m,
         windspdmph_avg10m: data.windspdmph_avg10m,
         winddir_avg10m: data.winddir_avg10m,
+    } as AmbientData;
+
+    const dataObject = {
+        api_key,
+        data: newData,
         metadata: {
-            data_type: "ambient",
+            data_type: "Ambient",
             deviceMAC: data.device.macAddress || "N/A",
             location: {
                 lat: data.device.info?.coords?.coords?.lat,
                 lon: data.device.info?.coords?.coords?.lon
             }
         }
+    };
+
+    const newInfo = new DataCollection({
+        miner_key,
+        status: data === null ? 'offline' : 'online',
+        deviceDataString: dataObject,
+        timestamp: new Date(data.dateutc),
     });
 
-    await toDb.save();
+    await newInfo.save();
 };

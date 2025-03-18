@@ -10,6 +10,7 @@ const router = express.Router();
 router.post("/api/submitpurple", async function (req, res) {
     try {
       const data: {
+        miner_key: string;
         read_key: string;
         sensor_id: string;
         address: string;
@@ -37,12 +38,13 @@ router.post("/api/submitpurple", async function (req, res) {
       const user = await getUserByAddress(data.address);
       console.log(data)
       const air_Account = new PurpleAirModel({
+        miner_key: data.miner_key,
         read_key: data.read_key,
         user_id: user._id,
         sensor: data.sensor_id,
         timestamp: new Date(),
         address: data.address,
-        api_type: "purple-air",
+        api_type: "Purple-air",
       });
       await air_Account.save();
       newApiKeyEvent.emit("newApiKey", air_Account._id);

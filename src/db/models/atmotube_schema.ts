@@ -10,6 +10,7 @@ const itemSchema = new mongoose.Schema({
 });
 
 const apiDataSchema = new mongoose.Schema({
+    miner_key: String,
     token: String,
     walletAddress: String,
     deviceId: String,

@@ -16,7 +16,7 @@ const startApp = async () => {
   await startApi();
 
   // Handling for Ambient devices
-  const ambientApiKeys: AmbientAccount[] = await AmbientModel.find({ api_type: { $in: ["ambient"] } });
+  const ambientApiKeys: AmbientAccount[] = await AmbientModel.find({ api_type: { $in: ["Ambient"] } });
   for (let account of ambientApiKeys) {
     try {
       await createClientForAmbientKey(ambientClients, account._id);
@@ -28,7 +28,7 @@ const startApp = async () => {
   }
 
   // Handling for PurpleAir devices
-  const purpleAirApiKeys: PurpleAirAccount[] = await PurpleAirModel.find({ api_type: "purple-air" });
+  const purpleAirApiKeys: PurpleAirAccount[] = await PurpleAirModel.find({ api_type: "Purple-air" });
   for (let account of purpleAirApiKeys) {
     try {
       await PurpleAirClient.createClient(purpleairClients, account._id);
@@ -41,7 +41,7 @@ const startApp = async () => {
 
 
   // Handling for EcoWitt devices
-  const ecoapiKeys: EcowittAccount[] = await EcowittModel.find({ api_type: "ecowitt" });
+  const ecoapiKeys: EcowittAccount[] = await EcowittModel.find({ api_type: "Ecowitt" });
   for (const account of ecoapiKeys) {
     try {
       await createClientForEcoWittKey(ecowittClients, account._id);
@@ -53,7 +53,7 @@ const startApp = async () => {
   }
 
   // Handling for Pebble devices
-  const pebbleApiKeys: PebbleAccount[] = await PebbleModel.find({ api_type: "pebble" });
+  const pebbleApiKeys: PebbleAccount[] = await PebbleModel.find({ api_type: "Pebble" });
   for (const account of pebbleApiKeys) {
     try {
       await PebbleClient.createClient(pebbleClients, account._id);
@@ -68,13 +68,15 @@ const startApp = async () => {
 
   newApiKeyEvent.on("newApiKey", async (ObjectId: string) => {
     const findedApikey = await AirAccountModel.findById(ObjectId);
-    if (findedApikey?.api_type === "ecowitt") {
+    console.log('findedApikey : ', findedApikey, ObjectId);
+    if (findedApikey?.api_type === "Ecowitt") {
+      console.log('new API Key Event Ecowitt : ', findedApikey?.api_type);
       await createClientForEcoWittKey(ecowittClients, ObjectId);
-    } else if (findedApikey?.api_type === "ambient") {
+    } else if (findedApikey?.api_type === "Ambient") {
       await createClientForAmbientKey(ambientClients, ObjectId);
-    } else if (findedApikey?.api_type === "purple-air") {
+    } else if (findedApikey?.api_type === "Purple-air") {
       await PurpleAirClient.createClient(purpleairClients, ObjectId);
-    } else if (findedApikey?.api_type === "pebble") {
+    } else if (findedApikey?.api_type === "Pebble") {
       await PebbleClient.createClient(pebbleClients, ObjectId);
 
     }
@@ -83,13 +85,13 @@ const startApp = async () => {
   newApiKeyEvent.on("deleteApiKey", async (ObjectId: string) => {
     const findedApikey = await AirAccountModel.findById(ObjectId);
     console.log(findedApikey)
-    if (findedApikey?.api_type === "ecowitt") {
+    if (findedApikey?.api_type === "Ecowitt") {
       ecowittClients.delete(ObjectId);
-    } else if (findedApikey?.api_type === "purple-air") {
+    } else if (findedApikey?.api_type === "Purple-air") {
       purpleairClients.delete(ObjectId);
-    } else if (findedApikey?.api_type === "ambient") {
+    } else if (findedApikey?.api_type === "Ambient") {
       ambientClients.delete(ObjectId);
-    } else if (findedApikey?.api_type === "pebble") {
+    } else if (findedApikey?.api_type === "Pebble") {
       pebbleClients.delete(ObjectId);
     }
   });

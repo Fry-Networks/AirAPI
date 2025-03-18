@@ -2,16 +2,21 @@
 import axios from "axios";
 import { EcowittAccount, EcowittModel } from "../db/models/air_accounts.js";
 import { EcoWittDevice, EcoWittDeviceData, EcoWittDevicesResponse } from "../types/ecowittTypes.js";
-import { EcowittDataModel } from "../db/models/air_data.js";
+import { EcowittDataModel, EcowittData } from "../db/models/air_data.js";
+import { getCollectionByMinerKey } from "../db/models/data.js";
 
 export const createClientForEcoWittKey = async (clients: Map<string, string>, ObjectId: string) => {
+    console.log('createClientForEcoWittKey : started');
     if (clients.has(ObjectId)) return;
 
     const account: EcowittAccount = (await EcowittModel.findById(ObjectId))!;
 
-    const accountApiKey = account.api_key;
+    console.log('createClientForEcoWittKey : ', account);
 
+    const accountApiKey = account.api_key;
     const accountAppKey = account.app_key;
+    const accountMinerKey = account.miner_key;
+
     function getName(device: EcoWittDevice) {
         return device.name;
     }
@@ -46,19 +51,21 @@ export const createClientForEcoWittKey = async (clients: Map<string, string>, Ob
             account.save();
             devices = toDb;
         }
-        console.log(`Created client for ecowitt key ${account.api_key}`);
+        // console.log(`Created client for ecowitt key ${account.api_key}`);
     } catch (error) {
         console.error(error);
     }
 
-    console.log("Hello world devices", devices);
+    // console.log("Hello world devices", devices);
 
     const fetchDeviceData = async (val: any) => {
         try {
             const data: EcoWittDeviceData = await axios.get(
                 `https://api.ecowitt.net/api/v3/device/real_time?application_key=${accountAppKey}&api_key=${accountApiKey}&mac=${val?.deviceMAC}&call_back=all`
             );
-            logEcoWitt(data, val);
+
+            const DataCollection = await getCollectionByMinerKey(accountMinerKey);
+            logEcoWitt(data, val, DataCollection, accountMinerKey, accountApiKey);
         } catch (error) {
             console.error(error);
         }
@@ -78,68 +85,79 @@ export const createClientForEcoWittKey = async (clients: Map<string, string>, Ob
     return;
 };
 
-const logEcoWitt = async (data: any, deviceInfo: any) => {
+const logEcoWitt = async (data: any, deviceInfo: any, DataCollection: any, miner_key: string, api_key: string) => {
     let fullData: EcoWittDeviceData = data.data;
-    let storeD = fullData.data
+    let storeD = fullData.data;
+    console.log(typeof storeD);
     //log the device if all weather fields are null
     if (fullData.code !== 0) {
         console.log("Error with device", deviceInfo.infos.name, fullData.msg);
         return;
     }
-    const toDb = new EcowittDataModel({
-        timestamp: new Date(parseInt(fullData.time) * 1000),
-        pm25_ch1: {
-            real_time_aqi: storeD?.pm25_ch1?.real_time_aqi,
-            pm25: storeD?.pm25_ch1?.pm25,
-            '24_hours_aqi': storeD?.pm25_ch1["24_hours_aqi"]
-        },
-        pm25_ch2: {
-            real_time_aqi: storeD?.pm25_ch2?.real_time_aqi,
-            pm25: storeD?.pm25_ch2?.pm25,
-            '24_hours_aqi': storeD?.pm25_ch2["24_hours_aqi"]
-        },
-        pm25_ch3: {
-            real_time_aqi: storeD?.pm25_ch3?.real_time_aqi,
-            pm25: storeD?.pm25_ch3?.pm25,
-            '24_hours_aqi': storeD?.pm25_ch3["24_hours_aqi"]
-        },
-        pm25_ch4: {
-            real_time_aqi: storeD?.pm25_ch4?.real_time_aqi,
-            pm25: storeD?.pm25_ch4?.pm25,
-            '24_hours_aqi': storeD?.pm25_ch4["24_hours_aqi"]
-        },
-        pm10_aqi_combo: {
-            real_time_aqi: storeD?.pm10_aqi_combo?.real_time_aqi,
-            pm10: storeD?.pm10_aqi_combo?.pm10,
-        },
-        pm1_aqi_combo: {
-            real_time_aqi: storeD?.pm1_aqi_combo?.real_time_aqi,
-            pm1: storeD?.pm1_aqi_combo?.pm1,
-        },
-        pm4_aqi_combo: {
-            real_time_aqi: storeD?.pm4_aqi_combo?.real_time_aqi,
-            pm4: storeD?.pm4_aqi_combo?.pm4,
-        },
-        co2_aqi_combo: {
-            co2: storeD?.co2_aqi_combo?.co2,
-            '24_hours_average': storeD?.co2_aqi_combo["24_hours_average"]
-        },
-        pm25_aqi_combo: {
-            real_time_aqi: storeD?.pm25_aqi_combo?.real_time_aqi,
-            pm25: storeD?.pm25_aqi_combo?.pm25,
-            '24_hours_aqi': storeD?.pm25_aqi_combo["24_hours_aqi"]
-        },
+
+    // const newData = {
+    //     pm25_ch1: {
+    //         real_time_aqi: storeD?.pm25_ch1?.real_time_aqi,
+    //         pm25: storeD?.pm25_ch1?.pm25,
+    //         '24_hours_aqi': storeD?.pm25_ch1["24_hours_aqi"]
+    //     },
+    //     pm25_ch2: {
+    //         real_time_aqi: storeD?.pm25_ch2?.real_time_aqi,
+    //         pm25: storeD?.pm25_ch2?.pm25,
+    //         '24_hours_aqi': storeD?.pm25_ch2["24_hours_aqi"]
+    //     },
+    //     pm25_ch3: {
+    //         real_time_aqi: storeD?.pm25_ch3?.real_time_aqi,
+    //         pm25: storeD?.pm25_ch3?.pm25,
+    //         '24_hours_aqi': storeD?.pm25_ch3["24_hours_aqi"]
+    //     },
+    //     pm25_ch4: {
+    //         real_time_aqi: storeD?.pm25_ch4?.real_time_aqi,
+    //         pm25: storeD?.pm25_ch4?.pm25,
+    //         '24_hours_aqi': storeD?.pm25_ch4["24_hours_aqi"]
+    //     },
+    //     pm10_aqi_combo: {
+    //         real_time_aqi: storeD?.pm10_aqi_combo?.real_time_aqi,
+    //         pm10: storeD?.pm10_aqi_combo?.pm10,
+    //     },
+    //     pm1_aqi_combo: {
+    //         real_time_aqi: storeD?.pm1_aqi_combo?.real_time_aqi,
+    //         pm1: storeD?.pm1_aqi_combo?.pm1,
+    //     },
+    //     pm4_aqi_combo: {
+    //         real_time_aqi: storeD?.pm4_aqi_combo?.real_time_aqi,
+    //         pm4: storeD?.pm4_aqi_combo?.pm4,
+    //     },
+    //     co2_aqi_combo: {
+    //         co2: storeD?.co2_aqi_combo?.co2,
+    //         '24_hours_average': storeD?.co2_aqi_combo["24_hours_average"]
+    //     },
+    //     pm25_aqi_combo: {
+    //         real_time_aqi: storeD?.pm25_aqi_combo?.real_time_aqi,
+    //         pm25: storeD?.pm25_aqi_combo?.pm25,
+    //         '24_hours_aqi': storeD?.pm25_aqi_combo["24_hours_aqi"]
+    //     }
+    // } as any;
+
+    const dataObject = {
+        api_key,
+        data: storeD,
         metadata: {
-            data_type: 'ecowitt',
-            deviceMAC: deviceInfo.macAddress || "N/A",
+            data_type: 'Ecowitt',
+            deviceMAC: deviceInfo.deviceMAC || "N/A",
             location: {
                 lat: deviceInfo.infos.coords.lat,
                 lon: deviceInfo.infos.coords.lon
             }
         }
+    };
+
+    const newInfo = new DataCollection({
+        miner_key,
+        status: Object.keys(storeD).length === 0 ? 'offline' : 'online',
+        deviceDataString: dataObject,
+        timestamp: new Date(parseInt(fullData.time) * 1000),
     });
 
-    await toDb.save();
+    await newInfo.save();
 };
-
-// Additional EcoWitt-specific functions as neede

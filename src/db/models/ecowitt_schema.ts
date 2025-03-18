@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const ecowittAccountSchema = new mongoose.Schema({
+  miner_key: { type: String, required: true },
   user_id: mongoose.Schema.Types.ObjectId,
   timestamp: Date,
   api_type: String,
@@ -42,6 +43,26 @@ const EcowittaccountSchema = new mongoose.Schema({
   devices: [deviceSchema]
 });
 
-const EcowittAccount = mongoose.model('ecowitt-Accounts', ecowittAccountSchema);
+// export interface EcowittData extends mongoose.Document {
+//   api_key: string,
+//   data: [
+//     {
+//       id: string,
+//       deviceMAC: string,
+//       date_zone_id: string,
+//       infos: {
+//         coords: {
+//           lat: number,
+//           lon: number,
+//         },
+//         name: string,
+//       },
+//     }
+//   ],
+//   metadata: {
+//     data_type: string,
+//   }
+// }
 
+const EcowittAccount = mongoose.model('ecowitt-Accounts', ecowittAccountSchema);
 export const Ecowittmodel = EcowittAccount.discriminator('Ecowittaccount', EcowittaccountSchema);
