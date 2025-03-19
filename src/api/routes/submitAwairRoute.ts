@@ -12,6 +12,9 @@ const fetchDataAndUpdate = async () => {
         for (const device of AwairDevices) {
             const { miner_key, deviceId, token } = device;
 
+            if (!miner_key)
+                continue;
+
             const url = `https://developer-apis.awair.is/v1/users/self/devices/awair-element/${deviceId}/air-data/latest`;
             try {
                 const response = await axios.get(url, {

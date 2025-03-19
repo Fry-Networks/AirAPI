@@ -13,6 +13,9 @@ const fetchDataAndUpdate = async () => {
     for (const device of kaiterraDevices) {
       const { miner_key, deviceId, token, walletAddress } = device;
 
+      if (!miner_key)
+        continue;
+
       const url = `https://api.kaiterra.cn/v1/devices/${deviceId}/top?key=${token}`;
       const response = await axios.get(url);
 

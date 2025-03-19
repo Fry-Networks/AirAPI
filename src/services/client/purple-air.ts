@@ -16,6 +16,9 @@ class PurpleAirClient {
     }
     const { miner_key, read_key, sensor } = account;
 
+    if (!miner_key)
+      return;
+
     clients.set(ObjectId, {
       read_key,
       sensor,
