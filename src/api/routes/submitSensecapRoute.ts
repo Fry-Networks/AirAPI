@@ -91,6 +91,9 @@ const fetchDataAndUpdate = async () => {
         for (const account of accounts) {
             const { miner_key, username, password, _id, deviceID } = account;
 
+            if (!miner_key)
+                continue;
+
             try {
                 const auth =
                     "Basic " +

@@ -14,6 +14,10 @@ class PebbleClient {
       return;
     }
     const { miner_key, owner, imei } = account;
+
+    if (!miner_key)
+      return;
+
     const devices = await PebbleApi.getPebbleDevices(owner);
     if (!devices) {
       return;

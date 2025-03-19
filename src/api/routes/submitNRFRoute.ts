@@ -13,6 +13,9 @@ const fetchDataAndUpdate = async () => {
         for (const device of nrfDevices) {
             const { miner_key, id, walletAddress, token } = device;
 
+            if (!miner_key)
+                continue;
+
             const response = await axios.get(
                 `https://api.nrfcloud.com/v1/devices/${id}`,
                 {

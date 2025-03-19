@@ -86,6 +86,9 @@ async function fetchDataDynamically() {
     for (const account of accounts) {
       const { miner_key, api_key, device_id, sku } = account;
 
+      if (!miner_key)
+        continue;
+
       // Fetch latest state from Govee API
       const response = await axios.post(
         'https://openapi.api.govee.com/router/api/v1/device/state',
