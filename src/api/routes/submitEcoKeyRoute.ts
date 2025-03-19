@@ -1,6 +1,8 @@
 import axios from "axios";
 import express from "express";
 import { newApiKeyEvent } from "../../db/connect.js";
+import { EcowittModel } from "../../db/models/air_accounts.js";
+import { getCollectionByMinerKey } from "../../db/models/data.js";
 import { Ecowittmodel } from "../../db/models/ecowitt_schema.js";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 
@@ -10,7 +12,7 @@ router.post("/api/submitEcokey", async function (req, res) {
   try {
     const data = req.body;
     console.log(data,'ecowitt data')
-    const existingKey = await Ecowittmodel.exists({
+    const existingKey = await EcowittModel.exists({
       api_key: data.apiKey,
     });
 
@@ -21,7 +23,7 @@ router.post("/api/submitEcokey", async function (req, res) {
       });
     }
 
-    const existingAppKey = await Ecowittmodel.exists({
+    const existingAppKey = await EcowittModel.exists({
       app_key: data.appKey,
     });
 
@@ -33,9 +35,8 @@ router.post("/api/submitEcokey", async function (req, res) {
     }
 
     const response = await axios.get(
-      `https://api.ecowitt.net/api/v3/device/list?application_key=${data.app_key}&api_key=${data.apiKey}`
+      `https://api.ecowitt.net/api/v3/device/list?application_key=${data.appKey}&api_key=${data.apiKey}`
     );
-    console.log(response,'url')
 
     const apiResponse = response.data;
     console.log(apiResponse,'apiResponse')
@@ -60,12 +61,13 @@ router.post("/api/submitEcokey", async function (req, res) {
       },
     }));
 
-    const ecowittAccount = new Ecowittmodel({
+    const ecowittAccount = new EcowittModel({
+      miner_key: data.miner_key,
       api_key: data.apiKey,
       user_id: user._id,
       timestamp: new Date(),
-      api_type: "ecowitt",
-      app_key: data.app_key,
+      api_type: "Ecowitt",
+      app_key: data.appKey,
       walletAddress: data.address,
       devices: devices,
     });
@@ -85,58 +87,6 @@ router.post("/api/submitEcokey", async function (req, res) {
       status: "ERROR",
     });
   }
-
-  // Periodic data fetching function
-async function fetchDataDynamically() {
-    try {
-      const accounts = await Ecowittmodel.find();
-  
-      for (const account of accounts) {
-        //@ts-ignore
-        const { api_key, app_key } = account;
-  
-        // Fetch latest devices from Ecowitt API
-        const response = await axios.get(
-          `https://api.ecowitt.net/api/v3/device/list?application_key=${app_key}&api_key=${api_key}`
-        );
-  
-        const apiResponse = response.data;
-  
-        // Update devices if API response is successful
-        if (apiResponse.code === 0) {
-          const devices = apiResponse.data.list.map((device: any) => ({
-            id: device.id.toString(),
-            deviceMAC: device.mac,
-            infos: {
-              coords: {
-                lat: device.latitude,
-                lon: device.longitude,
-              },
-              name: device.name,
-            },
-          }));
-  
-          // Update devices in the database
-          await Ecowittmodel.findOneAndUpdate(
-            { api_key },
-            {
-              devices,
-              timestamp: new Date(),
-            }
-          );
-  
-          console.log(`Updated devices for API Key: ${api_key}`);
-        } else {
-          console.error(`Error fetching devices for API Key: ${api_key}`);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching or updating Ecowitt data:", error);
-    }
-  }
-  
-  // Set interval for periodic data fetching (every 10 minutes)
-  setInterval(fetchDataDynamically, 10 * 60 * 1000);
 });
 
 export default router;

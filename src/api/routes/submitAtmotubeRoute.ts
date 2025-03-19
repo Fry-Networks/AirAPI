@@ -10,9 +10,9 @@ router.post(
   async (req: Request<{}, {}, RequestBody>, res: Response) => {
     console.log(req.body, "____body");
     try {
-      const { token, deviceId, address } = req.body;
+      const { miner_key, token, deviceId, address } = req.body;
 
-      if (!token || !deviceId || !address) {
+      if (!miner_key || !token || !deviceId || !address) {
         return res
           .status(400)
           .send({
@@ -38,6 +38,7 @@ router.post(
         console.log("deviceData", deviceData);
 
         const AtmotubeData = new Atmotube({
+          miner_key: miner_key,
           status: deviceData.status,
           token: token,
           walletAddress: address,

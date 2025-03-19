@@ -9,6 +9,7 @@ const router = express.Router();
 router.post("/api/submitkey", async function (req, res) {
     try {
         const data: {
+          miner_key: string;
           key: string;
           address: string;
         } = req.body;
@@ -46,6 +47,7 @@ router.post("/api/submitkey", async function (req, res) {
         const user = await getUserByAddress(data.address);
     
         const key = new AmbientModel({
+          miner_key: data.miner_key,
           api_key: data.key,
           user_id: user._id,
           address: data.address,

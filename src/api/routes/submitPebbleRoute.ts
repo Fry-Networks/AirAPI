@@ -10,6 +10,7 @@ const router = express.Router();
 router.post("/api/submitpebble", async function (req, res) {
     try {
         const data: {
+          miner_key: string;
           imei: string;
           erc_addr: string;
           address: string
@@ -54,12 +55,13 @@ router.post("/api/submitpebble", async function (req, res) {
         const user = await getUserByAddress(data.address);
     
         const key = new PebbleModel({
+          miner_key: data.miner_key,
           imei: data.imei,
           user_id: user._id,
           address: data.address,
           timestamp: new Date(),
           owner: data.erc_addr.toLowerCase(),
-          api_type: "pebble",
+          api_type: "Pebble",
         });
         await key.save();
         newApiKeyEvent.emit("newApiKey", key._id);

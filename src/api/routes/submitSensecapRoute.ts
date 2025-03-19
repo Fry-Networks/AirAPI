@@ -1,7 +1,8 @@
 import axios from "axios";
 import express from "express";
 import { newApiKeyEvent } from "../../db/connect.js";
-import { SenseCAPAccount, SenseCAPDataHistory } from "../../db/models/sensecap_schema.js";
+import { getCollectionByMinerKey } from "../../db/models/data.js";
+import { SenseCAPAccount, SenseCAPData } from "../../db/models/sensecap_schema.js";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 
 const router = express.Router();
@@ -55,6 +56,7 @@ router.post("/api/submitSenseCAPKey", async function (req, res) {
         const user = await getUserByAddress(data.address);
 
         const sensecapAccount = new SenseCAPAccount({
+            miner_key: data.miner_key,
             user_id: user._id,
             timestamp: new Date(),
             api_type: "sensecap",
@@ -87,7 +89,7 @@ const fetchDataAndUpdate = async () => {
         const accounts = await SenseCAPAccount.find();
 
         for (const account of accounts) {
-            const { username, password, _id, deviceID } = account;
+            const { miner_key, username, password, _id, deviceID } = account;
 
             try {
                 const auth =
@@ -134,19 +136,25 @@ const fetchDataAndUpdate = async () => {
                     );
 
                     console.log(`Updated data for SenseCAP account: ${_id}`);
-
-                    // Save historical data
-                    const senseCAPDataHistory = new SenseCAPDataHistory({
-                        sensecapAccountId: _id,
-                        groups,
-                        timestamp: new Date(),
-                    });
-
-                    await senseCAPDataHistory.save();
-                    console.log(`Saved historical data for SenseCAP account: ${_id}`);
-                } else {
-                    console.log(`No changes detected for SenseCAP account: ${_id}`);
                 }
+
+                const DataCollection = await getCollectionByMinerKey(miner_key);
+                const dataObject = {
+                    deviceID,
+                    data: groups,
+                    metadata: {
+                        data_type: "SenseCAP",
+                    }
+                } as SenseCAPData;
+
+                const data = new DataCollection({
+                    miner_key,
+                    status: Object.keys(groups).length === 0 ? 'offline' : 'online',
+                    deviceDataString: dataObject,
+                    timestamp: new Date(),
+                });
+
+                await data.save();
             } catch (error) {
                 console.error(
                     `Error fetching data for SenseCAP account: ${_id}`,

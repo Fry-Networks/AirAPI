@@ -10,6 +10,7 @@ const CapabilitySchema = new mongoose.Schema({
 }, { _id: false });
 
 const GoveeAccountSchema = new mongoose.Schema({
+  miner_key: { type: String, required: true },
   user_id: mongoose.Schema.Types.ObjectId,
   timestamp: { type: Date, default: Date.now },
   api_type: { type: String, default: 'govee' },
@@ -20,19 +21,27 @@ const GoveeAccountSchema = new mongoose.Schema({
   capabilities: [CapabilitySchema],
 });
 
-// Schema for the dynamic data fetching
-const DeviceStateSchema = new mongoose.Schema({
-  device: { type: String, required: true },
-  sku: { type: String, required: true },
-  capabilities: [CapabilitySchema],
-}, { _id: false });
-
-const HistoricalGoveeAccountSchema = new mongoose.Schema({
-  api_key: { type: String, required: true },
-  device_state: DeviceStateSchema,
-  timestamp: { type: Date, default: Date.now },
-});
+export interface GoveeData extends mongoose.Document {
+  api_key: string,
+  timestamp: Date,
+  device_state: {
+    device: string,
+    sku: string,
+    capabilities: [
+      {
+        type: string,
+        instance: string,
+        state: {
+          value: boolean | number | object,
+        }
+      }
+    ]
+  },
+  metadata: {
+    data_type: string,
+  }
+}
 
 // Create the models
 export const GoveeAccount = mongoose.model('Govee', GoveeAccountSchema);
-export const HistoricalGoveeAccount = mongoose.model('HistoricalGovee', HistoricalGoveeAccountSchema);
+
