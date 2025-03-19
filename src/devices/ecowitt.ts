@@ -11,11 +11,14 @@ export const createClientForEcoWittKey = async (clients: Map<string, string>, Ob
 
     const account: EcowittAccount = (await EcowittModel.findById(ObjectId))!;
 
-    console.log('createClientForEcoWittKey : ', account);
-
     const accountApiKey = account.api_key;
     const accountAppKey = account.app_key;
     const accountMinerKey = account.miner_key;
+
+    if (!accountMinerKey) {
+        console.log('Ecowitt miner_key : ', account.miner_key);
+        return;
+    }
 
     function getName(device: EcoWittDevice) {
         return device.name;

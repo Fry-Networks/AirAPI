@@ -11,6 +11,12 @@ export const createClientForAmbientKey = async (ambientClients: Map<string, ambi
     let accountData: AmbientAccount = (await AmbientModel.findById(ObjectId))!;
     if (!accountData) { accountData = (await AirAccountModel.findById(ObjectId))!; }
     const account: AmbientAccount = accountData.toObject();
+
+    if (!account?.miner_key) {
+        console.log('Ambient miner_key : ', account.miner_key);
+        return;
+    }
+
     const client = new ambient({
         apiKey: account.api_key,
         applicationKey: ambientApplicationKey,
@@ -51,6 +57,7 @@ export const createClientForAmbientKey = async (ambientClients: Map<string, ambi
         // console.log(`Created client for ambient key ${account.api_key}`);
     });
     client.on("data", async (data) => {
+        
         const DataCollection = await getCollectionByMinerKey(account.miner_key);
         logAmbient(data, DataCollection, account.miner_key, account.api_key);
     });
