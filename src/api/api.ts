@@ -1,4 +1,5 @@
 import bodyparser from "body-parser";
+import cors from 'cors';
 import express from "express";
 import { rateLimit } from "express-rate-limit";
 import { connect } from "../db/connect.js";
@@ -14,6 +15,15 @@ import submitPurpleRoute from "./routes/submitPurpleRoute.js";
 import submitSenseCAPRoute from './routes/submitSensecapRoute.js';
 
 const app = express();
+
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://registration-portal-beryl.vercel.app"], // Change this to your frontend URL
+    methods: "GET, POST, OPTIONS",
+    allowedHeaders: "Content-Type",
+  })
+);
+
 app.use(bodyparser.json());
 
 const limiter = rateLimit({
