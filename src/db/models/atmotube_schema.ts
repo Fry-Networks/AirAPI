@@ -24,4 +24,25 @@ const apiDataSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+interface itemSchema extends mongoose.Document {
+    time: string,
+    voc: string,
+    pm1: string,
+    pm25: string,
+    pm10: string,
+    p: string,
+}
+
+export interface AtmotubeData extends mongoose.Document {
+    deviceId: string,
+    timestamp: Date,
+    data: {
+        total: number,
+        items: [itemSchema]
+    },
+    metadata: {
+        data_type: string,
+    }
+}
+
 export const Atmotube = mongoose.model('Atmotube', apiDataSchema);
