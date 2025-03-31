@@ -16,13 +16,15 @@ import submitSenseCAPRoute from './routes/submitSensecapRoute.js';
 
 const app = express();
 
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "https://registration-portal-beryl.vercel.app"], // Change this to your frontend URL
-    methods: "GET, POST, OPTIONS",
-    allowedHeaders: "Content-Type",
-  })
-);
+// app.use(
+//   cors({
+//     origin: ["http://localhost:3000", "https://registration-portal-beryl.vercel.app"], // Change this to your frontend URL
+//     methods: "GET, POST, OPTIONS",
+//     allowedHeaders: "Content-Type",
+//   })
+// );
+
+app.use(cors());
 
 app.use(bodyparser.json());
 
