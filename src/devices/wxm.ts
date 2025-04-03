@@ -5,7 +5,7 @@ import 'dotenv/config';
 import { SocksProxyAgent } from "socks-proxy-agent";
 import UserAgent from "user-agents";
 import { WeatherModel } from "../db/models/weather-schema.js";
-import { WXMAccount, WXMmodel } from "../db/models/air_accounts.js";
+import { WXMAccount, WXMModel } from "../db/models/air_accounts.js";
 import { getCollectionByMinerKey } from "../db/models/data.js";
 const proxy = process.env.PROXY;
 const agent = new SocksProxyAgent(
@@ -19,7 +19,7 @@ console.log(agent)
 export const createClientForWeatherXM = async (wxmClients: Map<string, string>, ObjectId: string) => {
     console.log('Creating client for WeatherXM');
     if (wxmClients.has(ObjectId)) return;
-    const account: WXMAccount = (await WXMmodel.findById(ObjectId))!;
+    const account: WXMAccount = (await WXMModel.findById(ObjectId))!;
     const DataCollection = await getCollectionByMinerKey(account.miner_key);
 
     let accountToken = account.token;
