@@ -91,7 +91,7 @@ export const createClientForEcoWittKey = async (clients: Map<string, string>, Ob
 const logEcoWitt = async (data: any, deviceInfo: any, DataCollection: any, miner_key: string, api_key: string) => {
     let fullData: EcoWittDeviceData = data.data;
     let storeD = fullData.data;
-    console.log(typeof storeD);
+
     //log the device if all weather fields are null
     if (fullData.code !== 0) {
         console.log("Error with device", deviceInfo.infos.name, fullData.msg);

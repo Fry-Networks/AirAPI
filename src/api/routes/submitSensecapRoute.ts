@@ -59,7 +59,7 @@ router.post("/api/submitSenseCAPKey", async function (req, res) {
             miner_key: data.miner_key,
             user_id: user._id,
             timestamp: new Date(),
-            api_type: "sensecap",
+            api_type: "Sensecap",
             walletAddress: data.address,
             username: data.username,
             password: data.password,
