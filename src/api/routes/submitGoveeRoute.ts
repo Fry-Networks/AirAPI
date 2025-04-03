@@ -56,7 +56,7 @@ router.post('/api/submitGoveeKey', async function (req, res) {
       api_key: data.apiKey,
       user_id: user._id,
       timestamp: new Date(),
-      api_type: 'govee',
+      api_type: 'Govee',
       device_id: data.deviceId,
       sku: data.sku,
       walletAddress: data.address,
