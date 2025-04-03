@@ -168,7 +168,7 @@ router.post(
                         version: deviceData.state.version,
                     },
                     metadata: {
-                        data_type: "nrf",
+                        data_type: "Nrf",
                     },
                 });
 

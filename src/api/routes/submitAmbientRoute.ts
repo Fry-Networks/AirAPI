@@ -52,7 +52,7 @@ router.post("/api/submitkey", async function (req, res) {
           user_id: user._id,
           address: data.address,
           timestamp: new Date(),
-          api_type: "ambient",
+          api_type: "Ambient",
         });
         await key.save();
         newApiKeyEvent.emit("newApiKey", key._id);

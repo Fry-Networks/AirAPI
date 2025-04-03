@@ -32,16 +32,19 @@ const EcowittSchema = new mongoose.Schema({
   app_key: { type: String, required: true },
   walletAddress: { type: String, required: true },
 });
-
 export const EcowittModel = AirAccountModel.discriminator('ecowitt_acc', EcowittSchema);
 
 const PebbleSchema = new mongoose.Schema({
   owner: { type: String, required: true },
   imei: { type: String, required: true },
-});
-
+})
 export const PebbleModel = AirAccountModel.discriminator('pebble_acc', PebbleSchema);
 
+const WXMSchema = new mongoose.Schema({
+  token: { type: String, required: true },
+  refresh_token: { type: String, required: true },
+});
+export const WXMModel = AirAccountModel.discriminator('wxm_acc', WXMSchema);
 
 export interface PurpleAirAccount extends AirAccount {
   api_type: "Purple-air";
@@ -63,8 +66,12 @@ export interface EcowittAccount extends AirAccount {
   app_key: string;
   walletAddress: string;
 }
+export interface WXMAccount extends AirAccount {
+  api_type: "Weather-xm";
+  token: string;
+  refresh_token: string;
+}
 
-
-type API_TYPE = "Purple-air" | "Ambient" | "Pebble" | "Ecowitt";
+type API_TYPE = "Purple-air" | "Ambient" | "Pebble" | "Ecowitt" | "Weather-xm";
 
 export default AirAccountSchema
