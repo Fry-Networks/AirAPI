@@ -14,6 +14,8 @@ import submitPebbleRoute from "./routes/submitPebbleRoute.js";
 import submitPurpleRoute from "./routes/submitPurpleRoute.js";
 import submitSenseCAPRoute from './routes/submitSensecapRoute.js';
 import submitXMTokenRoute from "./routes/submitXMTokenRoute.js";
+import submitIopoolRoute from './routes/submitIopoolRoute.js';
+import submitGmcMapRoute from './routes/submitGmcMapRoute.js';
 
 const app = express();
 
@@ -64,6 +66,8 @@ app.use(submitAwairRoute);
 app.use(submitGoveeKey);
 app.use(submitSenseCAPRoute);
 app.use(submitXMTokenRoute);
+app.use(submitIopoolRoute);
+app.use(submitGmcMapRoute);
 
 export async function startApi() {
   await connect();

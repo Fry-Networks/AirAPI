@@ -1,31 +1,41 @@
 import { request, gql } from 'graphql-request'
 import { PebbleData } from "../../db/models/air_data.js";
+
 class PebbleApi {
     static url = 'https://pebble.iotex.me/v1/graphql';
     static async getPebbleDataByImei(imei: string, limit = 1): Promise<PebbleRawData | undefined> {
         try {
             const query = gql`
-        query {
-            pebble_device_record(limit: ${limit},  order_by: {timestamp: desc}, where: {imei: {_eq: "${imei}"}, latitude: {_neq: "200.0000000"}}
-            ) {
-                latitude, longitude, timestamp
-                light
-                id
-                snr
-                vbat
-                humidity
-                pressure
-                gyroscope
-                temperature
-                gas_resistance
-                accelerometer
-                temperature2
-
-
-              }
-            }
-        `
-            const response: PebbleRawData = await request(this.url, query)
+                query {
+                    pebble_device_record(
+                        limit: ${limit}
+                        where: { imei: { _eq: "${imei}" } }
+                        order_by: { timestamp: desc }
+                    ) {
+                        accelerometer
+                        created_at
+                        gas_resistance
+                        gyroscope
+                        humidity
+                        id
+                        imei
+                        latitude
+                        light
+                        longitude
+                        operator
+                        pressure
+                        signature
+                        snr
+                        temperature
+                        temperature2
+                        timestamp
+                        updated_at
+                        vbat
+                    }
+                }
+            `
+            const response: PebbleRawData = await request(this.url, query);
+            console.log('getPebbleDataByImei : ', response);
 
             return response
         } catch (err: any) {
