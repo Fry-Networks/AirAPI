@@ -1,7 +1,7 @@
 import axios from "axios";
 import express from "express";
 import puppeteer from 'puppeteer';
-import { RowData, GmcMapData } from "db/models/gmcmap_schema.js";
+import { RowData, GmcMapData } from "../../db/models/gmcmap_schema.js";
 import { getCollectionByMinerKey } from "../../db/models/data.js";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 
