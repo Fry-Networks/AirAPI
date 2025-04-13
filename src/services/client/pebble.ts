@@ -95,7 +95,7 @@ class PebbleClient {
     })
 
     newInfo.save().then(() => {
-      console.log(`Data saved for device ${imei} at ${data.timestamp}`);
+      console.log(`Pebble Data saved for device ${imei} at ${data.timestamp}`);
     });;
   }
 

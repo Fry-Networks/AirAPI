@@ -32,7 +32,6 @@ export const createClientForWeatherXM = async (wxmClients: Map<string, string>, 
     let firstTime = true;
     const fetchDevices = async () => {
         try {
-            console.log('Fetching devices');
             const req = await proxyInstance.get('https://api.weatherxm.com/api/v1/me/devices', {
                 headers: {
                     'accept': 'application/json',
@@ -41,7 +40,7 @@ export const createClientForWeatherXM = async (wxmClients: Map<string, string>, 
                 },
             });
 
-            const toDb = req.data?.data?.map((device: any) => {
+            const toDb = req.data?.map((device: any) => {
                 return {
                     id: device.id,
                     deviceMAC: device.label,
@@ -55,9 +54,8 @@ export const createClientForWeatherXM = async (wxmClients: Map<string, string>, 
                 };
             });
             if (toDb && account.devices !== toDb) {
-
                 account.devices = toDb;
-                account.save();
+                await account.save();
                 devices = toDb;
             }
         } catch (error: any) {
@@ -122,6 +120,7 @@ export const createClientForWeatherXM = async (wxmClients: Map<string, string>, 
             //   `https://api.ecowitt.net/api/v3/device/real_time?application_key=${accountAppKey}&api_key=${accountApiKey}&mac=${val?.deviceMAC}&call_back=all`
             // );
             logXM(res.data, val, account.miner_key, DataCollection);
+            console.log("WeatherXM Data fetch and update completed.");
         } catch (error: any) {
             if (error?.response.status === 401 && account.refresh_token) {
                 await refreshToken(account);
@@ -152,7 +151,7 @@ const logXM = async (data: any, deviceInfo: any, miner_key: string, DataCollecti
         storeD.date ||
         storeD.hourly
     if (!condition) return;
-    const latest = storeD.hourly[storeD.hourly.length - 1]
+    const latest = storeD.hourly[storeD.hourly.length - 1];
 
     const dataObject = {
         data: {
@@ -163,11 +162,11 @@ const logXM = async (data: any, deviceInfo: any, miner_key: string, DataCollecti
             humidity: +latest.humidity,
             uv: +latest.uv_index,
             solarradiation: +latest.solar_irradiance,
-            rainfall: +latest.rainfall.daily.value,
+            rainfall: +latest.rainfall?.daily.value,
         },
         metadata: {
             data_type: 'Weather-xm',
-            deviceMAC: deviceInfo.macAddress || "N/A",
+            deviceMAC: deviceInfo.deviceMAC || "N/A",
             location: {
                 lat: deviceInfo.infos.coords.lat,
                 lon: deviceInfo.infos.coords.lon,

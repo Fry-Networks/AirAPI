@@ -11,17 +11,17 @@ const fetchDataAndUpdate = async () => {
     const atmotubeDevices = await Atmotube.find();
 
     for (const device of atmotubeDevices) {
-      const { miner_key, token, deviceId, walletAddress } = device;
+      const { miner_key, token, deviceId } = device;
 
       if (!miner_key)
         continue;
 
-      const url = `https://api.atmotube.com/api/v1/data?api_key=${token}&mac=${deviceId}&order=asc&format=json&offset=0&limit=100`;
+      const url = `https://api.atmotube.com/api/v1/data?api_key=${token}&mac=${deviceId}&format=json&offset=0&limit=100`;
       try {
         const response = await axios.get(url);
 
         const newData = response.data;
-        if (newData.status !== "0") {
+        if (newData.status !== 0) {
           console.error(`Invalid response for account: ${deviceId}`);
           continue;
         }
@@ -98,7 +98,6 @@ setInterval(fetchDataAndUpdate, 10 * 60 * 1000);
 router.post(
   "/api/submitAtmotube",
   async (req: Request<{}, {}, RequestBody>, res: Response) => {
-    console.log(req.body, "____body");
     try {
       const { miner_key, token, deviceId, address } = req.body;
 
@@ -120,12 +119,11 @@ router.post(
         });
       }
 
-      const url = `https://api.atmotube.com/api/v1/data?api_key=${token}&mac=${deviceId}&order=asc&format=json&offset=0&limit=100`;
+      const url = `https://api.atmotube.com/api/v1/data?api_key=${token}&mac=${deviceId}&format=json&offset=0&limit=100`;
 
       try {
         const response = await axios.get(url);
         const deviceData = response.data;
-        console.log("deviceData", deviceData);
 
         const AtmotubeData = new Atmotube({
           miner_key: miner_key,
