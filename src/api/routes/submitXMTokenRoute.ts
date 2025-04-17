@@ -66,6 +66,7 @@ router.post("/api/submitXMToken", async function (req, res) {
     
         const key = new WXMModel({
           miner_key: data.miner_key,
+          walletAddress: data.address,
           api_type:'Weather-xm',
           token: loginResponse.data.token,
           refresh_token: loginResponse.data.refreshToken,
