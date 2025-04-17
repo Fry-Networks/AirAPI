@@ -16,6 +16,8 @@ import submitSenseCAPRoute from './routes/submitSensecapRoute.js';
 import submitXMTokenRoute from "./routes/submitXMTokenRoute.js";
 import submitIopoolRoute from './routes/submitIopoolRoute.js';
 import submitGmcMapRoute from './routes/submitGmcMapRoute.js';
+import submitRegisterHDRoute from './routes/submitRegisterHDRoute.js';
+import submitHDMinerRoute from './routes/submitHDMinerRoute.js';
 
 const app = express();
 
@@ -68,6 +70,8 @@ app.use(submitSenseCAPRoute);
 app.use(submitXMTokenRoute);
 app.use(submitIopoolRoute);
 app.use(submitGmcMapRoute);
+app.use(submitRegisterHDRoute);
+app.use(submitHDMinerRoute);
 
 export async function startApi() {
   await connect();
