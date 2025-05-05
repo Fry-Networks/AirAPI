@@ -80,24 +80,21 @@ router.post("/api/submitGmcMap", async function (req, res) {
       });
     }
 
-    const data = await scrapeData(param_id, miner_key);
+    // const data = await scrapeData(param_id, miner_key);
 
-    if (data.length === 0) {
-      console.log("Geiger Counter Not Found or No Data Available");
-      return res.status(400).json({
-        status: "ERROR",
-        message:
-          "No data found for the provided Param_ID. Geiger Counter Not Found.",
-      });
-    }
+    // if (data.length === 0) {
+    //   console.log("Geiger Counter Not Found or No Data Available");
+    //   return res.status(400).json({
+    //     status: "ERROR",
+    //     message:
+    //       "No data found for the provided Param_ID. Geiger Counter Not Found.",
+    //   });
+    // }
 
     const scrapedData = new GmcMapData({
       paramID: param_id,
       minerKey: miner_key,
-      data: data,
-      metadata: {
-        data_type: "GmcMap",
-      },
+      createdAt: new Date(Date.now()),
     });
 
     await scrapedData.save();
@@ -108,7 +105,7 @@ router.post("/api/submitGmcMap", async function (req, res) {
     res.status(200).json({
       status: "SUCCESS",
       message: "Data retrieved and stored successfully",
-      data: data,
+      // data: data,
     });
 
     console.log("Response sent");
@@ -122,5 +119,76 @@ router.post("/api/submitGmcMap", async function (req, res) {
     });
   }
 });
+
+let previous_time = new Date(Date.now());
+
+async function fetchDataDynamically() {
+  try {
+    const documents = await GmcMapData.find({});
+    const currentDate = new Date(Date.now());
+
+    for (const document of documents) {
+      const miner_key = document.minerKey;
+      const param_id = document.paramID;
+      if (!miner_key) {
+        console.log(`There's no miner key for device ${param_id}`);
+        continue;
+      }
+
+      const data = await scrapeData(param_id, miner_key);
+      const filtered_data = data.filter((data) => {
+        console.log(data.date);
+        const dataDate = new Date(data.date);
+        console.log(dataDate);
+
+        if (dataDate >= previous_time && dataDate <= currentDate) {
+          return true;
+        }
+
+        return false;
+      });
+
+      const DataCollection = await getCollectionByMinerKey(miner_key);
+
+      if (filtered_data.length <= 0) {
+        const savingData = new DataCollection({
+          miner_key,
+          status: "offline",
+          deviceDataString: [],
+          timestamp: new Date(),
+        });
+
+        await savingData.save();
+        continue;
+      }
+
+      const dataObject = {
+        data: filtered_data,
+        metadata: {
+          data_type: "GmcMap",
+          gmcmap_id: param_id,
+        },
+        timestamp: new Date(),
+      };
+      const savingData = new DataCollection({
+        miner_key,
+        status: "online",
+        deviceDataString: dataObject,
+        timestamp: new Date(),
+      });
+
+      await savingData.save();
+    }
+
+    previous_time = currentDate;
+  } catch (error) {
+    console.error(
+      `There's error occurred in fetchData from GmcMapData: ${error}`
+    );
+    return;
+  }
+}
+
+setInterval(fetchDataDynamically, 600000);
 
 export default router;
