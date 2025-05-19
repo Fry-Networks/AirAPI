@@ -137,9 +137,7 @@ async function fetchDataDynamically() {
 
       const data = await scrapeData(param_id, miner_key);
       const filtered_data = data.filter((data) => {
-        console.log(data.date);
         const dataDate = new Date(data.date);
-        console.log(dataDate);
 
         if (dataDate >= previous_time && dataDate <= currentDate) {
           return true;
@@ -189,6 +187,6 @@ async function fetchDataDynamically() {
   }
 }
 
-setInterval(fetchDataDynamically, 600000);
+setInterval(fetchDataDynamically, 1200000);
 
 export default router;
