@@ -7,12 +7,12 @@ const router = express.Router();
 router.post('/api/submitHDMiner', async function (req, res) {
   try {
     const { data, deviceMac } = req.body;
-    console.log('Hardware Miner Data : ', data, deviceMac);
+    console.log('Hardware Miner Data : ', data[0], deviceMac);
 
-    const hd_device = await HardwareAccount.findOne({ device_id: deviceMac });
+    const hd_device = await HardwareAccount.findOne({ miner_key: data[0] });
     if (!hd_device) {
       res.status(409).send({
-        message: `Device isn't existed in the database.`,
+        message: `Miner Key isn't existed in the database.`,
         status: 'ERROR',
       });
     }
