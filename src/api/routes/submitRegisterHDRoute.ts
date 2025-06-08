@@ -25,18 +25,24 @@ router.post('/api/submitRegsiterHD', async function (req, res) {
     const { miner_key, device_id, address } = req.body;
     
     // Check if the key is already in the database
-    const existingKey = (await HardwareAccount.exists({ miner_key })) || (await HardwareAccount.exists({ device_id }));
-
+    const existingKey = await HardwareAccount.exists({ miner_key });
     if (existingKey) {
       return void res.status(409).send({
-        message: "Device ID already exists in database.",
+        message: "Miner Key already exists in database.",
+        status: "ERROR",
+      });
+    }
+
+    const type = getMinerCategory(miner_key);
+    const existingId = await HardwareAccount.exists({ device_id, hd_type: type });
+    if (existingId) {
+      return void res.status(409).send({
+        message: `Device ID already exists in database with ${type}.`,
         status: "ERROR",
       });
     }
 
     const user = await getUserByAddress(address);
-
-    const type = getMinerCategory(miner_key);
     
     const device = new HardwareAccount({
       miner_key: miner_key,
