@@ -7,9 +7,9 @@ const router = express.Router();
 router.post('/api/submitHDMiner', async function (req, res) {
   try {
     const { data, deviceMac } = req.body;
-    console.log('Hardware Miner Data : ', data[0], deviceMac);
+    console.log('Hardware Miner Data : ', data, deviceMac);
 
-    const hd_device = await HardwareAccount.findOne({ miner_key: data[0] });
+    const hd_device = await HardwareAccount.findOne({ miner_key: data });
     if (!hd_device) {
       res.status(409).send({
         message: `Miner Key isn't existed in the database.`,
@@ -17,7 +17,7 @@ router.post('/api/submitHDMiner', async function (req, res) {
       });
     }
 
-    if (hd_device) {
+    if (hd_device && deviceMac.includes(hd_device.device_id)) {
       const miner_key = hd_device.miner_key;
 
       const DataCollection = await getCollectionByMinerKey(miner_key);
@@ -36,6 +36,11 @@ router.post('/api/submitHDMiner', async function (req, res) {
       res.status(200).send({
         message: `Successfully received updated data from your ${hd_device.device_id}`,
         status: 'SUCCESS',
+      });
+    } else {
+      res.status(409).send({
+        message: `Device ID isn't existed in the database.`,
+        status: 'ERROR',
       });
     }
       
