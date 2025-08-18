@@ -18,6 +18,10 @@ import submitIopoolRoute from './routes/submitIopoolRoute.js';
 import submitGmcMapRoute from './routes/submitGmcMapRoute.js';
 import submitRegisterHDRoute from './routes/submitRegisterHDRoute.js';
 import submitHDMinerRoute from './routes/submitHDMinerRoute.js';
+import submitCameraRoute from './routes/submitCameraRoute.js';
+import submitTapoRoute from './routes/submitTapoRoute.js';
+import submitShellyRoute from './routes/submitShellyRoute.js';
+import getDeviceCredential from './routes/getDeviceCredentialRoute.js';
 
 const app = express();
 
@@ -72,6 +76,10 @@ app.use(submitIopoolRoute);
 app.use(submitGmcMapRoute);
 app.use(submitRegisterHDRoute);
 app.use(submitHDMinerRoute);
+app.use(submitCameraRoute);
+app.use(submitTapoRoute);
+app.use(submitShellyRoute);
+app.use(getDeviceCredential);
 
 export async function startApi() {
   await connect();

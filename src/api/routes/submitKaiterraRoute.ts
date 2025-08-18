@@ -95,11 +95,18 @@ router.post(
       // Check if the device already exists in the database
       const existingDevice = await Kaiterra.findOne({ deviceId: deviceId });
       if (existingDevice) {
-        return res.status(400).send({
-          message: "ID already exists.",
-          status: "ERROR",
+        const result = await Kaiterra.findOne({
+          deviceId: deviceId,
         });
+
+        if (result?.miner_key !== miner_key) {
+          return res.status(409).send({
+              message: "ID already exists.",
+              status: "ERROR",
+          });
+        }
       }
+      
       const url = `https://api.kaiterra.cn/v1/devices/${deviceId}/top?key=${token}`;
 
       try {
@@ -116,6 +123,23 @@ router.post(
             value: point.value,
           })),
         }));
+
+        if (existingDevice) {
+          await Kaiterra.findOneAndUpdate(
+              { miner_key: miner_key },
+              { 
+                deviceId: deviceId,
+                token: token,
+                data: mappedData,
+              },
+              { upsert: false }
+          );
+  
+          return res.status(200).send({
+            message: "Updated Kaiterra Account Successful.",
+            status: "SUCCESS",
+          });
+        }
 
         // Create a new document with the mapped data
         const newData = new Kaiterra({

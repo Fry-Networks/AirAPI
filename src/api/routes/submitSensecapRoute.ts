@@ -18,10 +18,17 @@ router.post("/api/submitSenseCAPKey", async function (req, res) {
         });
 
         if (existingAccount) {
-            return res.status(409).send({
-                message: "Account already exists in the database.",
-                status: "ERROR",
+            const result = await SenseCAPAccount.findOne({
+                username: data.username,
+                password: data.password,
             });
+    
+            if (result?.miner_key !== data.miner_key) {
+                return res.status(409).send({
+                    message: "Account already exists in database.",
+                    status: "ERROR",
+                });
+            }
         }
         const auth =
             "Basic " +
@@ -50,6 +57,25 @@ router.post("/api/submitSenseCAPKey", async function (req, res) {
             return res.status(400).send({
                 message: "Invalid credentials. (Did not pass API check)",
                 status: "ERROR",
+            });
+        }
+
+        if (existingAccount) {
+            await SenseCAPAccount.findOneAndUpdate(
+                { miner_key: data.miner_key },
+                { 
+                    username: data.username,
+                    password: data.password,
+                    deviceID: data.deviceId,
+                    groups: apiResponse.data,
+                    timestamp: new Date(),
+                },
+                { upsert: false }
+            );
+  
+            return res.status(200).send({
+              message: "Updated Sensecap Account Successful.",
+              status: "SUCCESS",
             });
         }
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { AmbientModel } from "../../db/models/air_accounts.js";
+import { AmbientAccount, AmbientModel } from "../../db/models/air_accounts.js";
 import axios from "axios";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 import { newApiKeyEvent } from "../../db/connect.js";
@@ -15,13 +15,18 @@ router.post("/api/submitkey", async function (req, res) {
         } = req.body;
         console.log(data);
         // Check if the key is already in the database
-        const existingKey = (await AmbientModel.exists({ api_key: data.key })) || (await AmbientModel.exists({ token: data.key }));
-    
+        const existingKey = await AmbientModel.exists({ api_key: data.key }) ;
         if (existingKey) {
-          return void res.status(409).send({
-            message: "Key already exists in database.",
-            status: "ERROR",
+          const result: AmbientAccount | null = await AmbientModel.findOne({
+            api_key: data.key
           });
+  
+          if (result?.miner_key !== data.miner_key) {
+              return res.status(409).send({
+                  message: "Key already exists in database.",
+                  status: "ERROR",
+              });
+          }
         }
         // Check regex
         const regexCheck = /^[a-z0-9]{64}$/.test(data.key);
@@ -43,6 +48,23 @@ router.post("/api/submitkey", async function (req, res) {
             status: "ERROR",
           });
         }
+
+        if (existingKey) {
+          await AmbientModel.findOneAndUpdate(
+            { miner_key: data.miner_key },
+            { 
+              api_key: data.key,
+              timestamp: new Date(),
+            },
+            { upsert: false }
+          );
+    
+          return res.status(200).send({
+            message: "Updated Ambient Account Successful.",
+            status: "SUCCESS",
+          });
+        }
+
         // Add the key to the database
         const user = await getUserByAddress(data.address);
     

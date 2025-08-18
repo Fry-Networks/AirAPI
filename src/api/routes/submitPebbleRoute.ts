@@ -1,5 +1,5 @@
 import express from "express";
-import { AmbientModel, PebbleModel } from "../../db/models/air_accounts.js";
+import { PebbleAccount, PebbleModel } from "../../db/models/air_accounts.js";
 import axios from "axios";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 import { newApiKeyEvent } from "../../db/connect.js";
@@ -20,10 +20,16 @@ router.post("/api/submitpebble", async function (req, res) {
         const existingImei = await PebbleModel.exists({ imei: data.imei });
     
         if (existingImei) {
-          return void res.status(409).send({
-            message: "Imei already exists in database.",
-            status: "ERROR",
+          const result: PebbleAccount | null = await PebbleModel.findOne({
+            imei: data.imei,
           });
+  
+          if (result?.miner_key !== data.miner_key) {
+              return res.status(409).send({
+                message: "Imei already exists in database.",
+                status: "ERROR",
+              });
+          }
         }
         // Check regex
         const regexCheck = /^[0-9]{15}$/.test(data.imei);
@@ -51,6 +57,24 @@ router.post("/api/submitpebble", async function (req, res) {
             status: "ERROR",
           });
         }
+
+        if (existingImei) {
+          await PebbleModel.findOneAndUpdate(
+              { miner_key: data.miner_key },
+              { 
+                imei: data.imei,
+                owner: data.erc_addr.toLowerCase(),
+                timestamp: new Date(),
+              },
+              { upsert: false }
+          );
+  
+          return res.status(200).send({
+            message: "Updated Pebble Account Successful.",
+            status: "SUCCESS",
+          });
+        }
+
         // Add the key to the database
         const user = await getUserByAddress(data.address);
     

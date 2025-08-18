@@ -1,9 +1,7 @@
 import axios from "axios";
 import express from "express";
 import { newApiKeyEvent } from "../../db/connect.js";
-import { EcowittModel } from "../../db/models/air_accounts.js";
-import { getCollectionByMinerKey } from "../../db/models/data.js";
-import { Ecowittmodel } from "../../db/models/ecowitt_schema.js";
+import { EcowittAccount, EcowittModel } from "../../db/models/air_accounts.js";
 import { getUserByAddress } from "../../db/models/users-schema.js";
 
 const router = express.Router();
@@ -11,16 +9,22 @@ const router = express.Router();
 router.post("/api/submitEcokey", async function (req, res) {
   try {
     const data = req.body;
-    console.log(data,'ecowitt data')
+    
     const existingKey = await EcowittModel.exists({
       api_key: data.apiKey,
     });
 
     if (existingKey) {
-      return res.status(409).send({
-        message: "API Key already exists in the database.",
-        status: "ERROR",
+      const result: EcowittAccount | null = await EcowittModel.findOne({
+        api_key: data.apiKey,
       });
+
+      if (result?.miner_key !== data.miner_key) {
+        return res.status(409).send({
+            message: "API Key already exists in the database.",
+            status: "ERROR",
+        });
+      }
     }
 
     const existingAppKey = await EcowittModel.exists({
@@ -28,10 +32,16 @@ router.post("/api/submitEcokey", async function (req, res) {
     });
 
     if (existingAppKey) {
-      return res.status(409).send({
-        message: "App Key already exists in the database.",
-        status: "ERROR",
+      const result: EcowittAccount | null = await EcowittModel.findOne({
+        app_key: data.appKey,
       });
+
+      if (result?.miner_key !== data.miner_key) {
+        return res.status(409).send({
+          message: "App Key already exists in the database.",
+          status: "ERROR",
+        });
+      }
     }
 
     const response = await axios.get(
@@ -47,7 +57,6 @@ router.post("/api/submitEcokey", async function (req, res) {
         status: "ERROR",
       });
     }
-    const user = await getUserByAddress(data.address);
 
     const devices = apiResponse.data.list.map((device: { id: { toString: () => any; }; mac: any; latitude: any; longitude: any; name: any; }) => ({
       id: device.id.toString(),
@@ -60,6 +69,26 @@ router.post("/api/submitEcokey", async function (req, res) {
         name: device.name,
       },
     }));
+
+    if (existingKey || existingAppKey) {
+      await EcowittModel.findOneAndUpdate(
+          { miner_key: data.miner_key },
+          { 
+            api_key: data.apiKey,
+            app_key: data.appKey,
+            devices: devices,
+            timestamp: new Date(),
+          },
+          { upsert: false }
+      );
+
+      return res.status(200).send({
+        message: "Updated Ecowitt Account Successful.",
+        status: "SUCCESS",
+      });
+    }
+
+    const user = await getUserByAddress(data.address);
 
     const ecowittAccount = new EcowittModel({
       miner_key: data.miner_key,

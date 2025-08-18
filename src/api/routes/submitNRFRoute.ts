@@ -108,10 +108,8 @@ const fetchDataAndUpdate = async () => {
 fetchDataAndUpdate();
 setInterval(fetchDataAndUpdate, 10 * 60 * 1000); // Run every 10 minutes
 
-router.post(
-    "/api/submitNRF",
-    async (req: Request<{}, {}, RequestBody>, res: Response) => {
-        console.log(req.body, "____body");
+router.post("/api/submitNRF", async (req: Request<{}, {}, RequestBody>, res: Response) => {
+        
         try {
             const { miner_key, token, deviceId, address } = req.body;
 
@@ -125,12 +123,18 @@ router.post(
             }
 
             // Check if the device already exists in the database
-            const existingDevice = await Nrf.findOne({ id: deviceId });
+            const existingDevice = await Nrf.exists({ id: deviceId });
             if (existingDevice) {
-                return res.status(400).send({
-                    message: "ID already exists.",
-                    status: "ERROR",
+                const result = await Nrf.findOne({
+                    id: deviceId,
                 });
+        
+                if (result?.miner_key !== miner_key) {
+                    return res.status(409).send({
+                        message: "ID already exists.",
+                        status: "ERROR",
+                    });
+                }
             }
 
             try {
@@ -145,6 +149,41 @@ router.post(
 
                 const deviceData = response.data;
                 console.log("deviceData", deviceData);
+
+                if (existingDevice) {
+                    await Nrf.findOneAndUpdate(
+                        { miner_key },
+                        { 
+                            token: token,
+                            id: deviceId,
+                            tags: deviceData.tags,
+                            tenantId: deviceData.tenantId,
+                            meta: {
+                                updatedAt: deviceData.$meta.updatedAt,
+                                createdAt: deviceData.$meta.createdAt,
+                            },
+                            name: deviceData.name,
+                            type: deviceData.type,
+                            subType: deviceData.subType,
+                            firmware: deviceData.firmware,
+                            cloudMqttEnabled: deviceData.cloudMqttEnabled,
+                            state: deviceData.state,
+                            metaStateData: {
+                                desired: deviceData.state.metadata?.desired,
+                                reported: deviceData.state.metadata?.reported,
+                                version: deviceData.state.version,
+                            },
+                            timestamp: new Date(),
+                        },
+                        { upsert: false }
+                    );
+            
+                    return res.status(200).send({
+                      message: "Updated NRF Account Successful.",
+                      status: "SUCCESS",
+                    });
+                }
+
                 const device = new Nrf({
                     miner_key,
                     token: token,

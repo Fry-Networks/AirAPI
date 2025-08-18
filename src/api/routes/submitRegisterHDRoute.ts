@@ -28,10 +28,13 @@ router.post("/api/submitRegisterHD", async function (req, res) {
 
     const existingKey = await HardwareAccount.exists({ miner_key });
     if (existingKey) {
-      return void res.status(409).send({
-        message: "Miner Key already exists in database.",
-        status: "ERROR",
-      });
+      const result = await HardwareAccount.findOne({ miner_key });
+      if (result?.device_id.toLocaleLowerCase() === device_id.toLocaleLowerCase() ) {
+        return void res.status(409).send({
+          message: "Miner Key already exists in database.",
+          status: "ERROR",
+        });
+      }
     }
 
     const type = getMinerCategory(miner_key);
@@ -40,6 +43,22 @@ router.post("/api/submitRegisterHD", async function (req, res) {
       return void res.status(409).send({
         message: `Device ID already exists in database with ${type}.`,
         status: "ERROR",
+      });
+    }
+
+    if (existingKey) {
+      await HardwareAccount.findOneAndUpdate(
+        { miner_key },
+        { 
+          device_id,
+          timestamp: new Date(),
+        },
+        { upsert: false }
+      );
+
+      return res.status(200).send({
+        message: "Updated Hardware Account Successful.",
+        status: "SUCCESS",
       });
     }
 

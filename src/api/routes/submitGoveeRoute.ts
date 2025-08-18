@@ -14,12 +14,17 @@ router.post('/api/submitGoveeKey', async function (req, res) {
     console.log(data, 'Govee data');
     
     const existingKey = await GoveeAccount.exists({ api_key: data.apiKey });
-
     if (existingKey) {
-      return res.status(409).send({
-        message: 'API Key already exists in the database.',
-        status: 'ERROR',
+      const result = await GoveeAccount.findOne({
+        api_key: data.apiKey,
       });
+
+      if (result?.miner_key !== data.miner_key) {
+        return res.status(409).send({
+            message: "API Key already exists in the database.",
+            status: "ERROR",
+        });
+      }
     }
 
     const response = await axios.post(
@@ -38,14 +43,31 @@ router.post('/api/submitGoveeKey', async function (req, res) {
         },
       }
     );
-    console.log(response.data, 'API response');
 
     const apiResponse = response.data;
-
     if (apiResponse.code !== 200) {
       return res.status(400).send({
         message: 'Key is invalid. (Did not pass API check)',
         status: 'ERROR',
+      });
+    }
+
+    if (existingKey) {
+      await GoveeAccount.findOneAndUpdate(
+          { miner_key: data.miner_key },
+          { 
+            api_key: data.apiKey,
+            device_id: data.deviceId,
+            sku: apiResponse.payload.sku,
+            capabilities: apiResponse.payload.capabilities,
+            timestamp: new Date(),
+          },
+          { upsert: false }
+      );
+
+      return res.status(200).send({
+        message: "Updated Govee Account Successful.",
+        status: "SUCCESS",
       });
     }
     
@@ -58,7 +80,7 @@ router.post('/api/submitGoveeKey', async function (req, res) {
       timestamp: new Date(),
       api_type: 'Govee',
       device_id: data.deviceId,
-      sku: data.sku,
+      sku: apiResponse.payload.sku,
       walletAddress: data.address,
       capabilities: apiResponse.payload.capabilities,
     });
