@@ -2,7 +2,7 @@ import express from "express";
 import axios from "axios";
 import { connect, newApiKeyEvent } from "../../db/connect.js";
 import { getUserByAddress } from "../../db/models/users-schema.js";
-import { PurpleAirModel } from "../../db/models/air_accounts.js";
+import { PurpleAirAccount, PurpleAirModel } from "../../db/models/air_accounts.js";
 import PurpleAirApi from "../../services/api/purple-air.js";
 
 const router = express.Router();
@@ -17,14 +17,19 @@ router.post("/api/submitpurple", async function (req, res) {
       } = req.body;
       // Check if the key is already in the database
       const isPresent = await PurpleAirModel.exists({ sensor: data.sensor_id });
-  
       if (isPresent) {
-        return void res.status(409).send({
-          message: "Sensor already exists in database.",
-          status: "ERROR",
+        const result: PurpleAirAccount | null = await PurpleAirModel.findOne({
+          sensor: data.sensor_id,
         });
+
+        if (result?.miner_key !== data.miner_key) {
+            return res.status(409).send({
+              message: "Sensor already exists in database.",
+              status: "ERROR",
+            });
+        }
       }
-     
+
       // Check if the key is valid by making a request to the API
       //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
       const isValid = await PurpleAirApi.isValid(data.read_key, data.sensor_id)
@@ -34,9 +39,27 @@ router.post("/api/submitpurple", async function (req, res) {
           status: "ERROR",
         });
       }
+
+      if (isPresent) {
+        await PurpleAirModel.findOneAndUpdate(
+            { miner_key: data.miner_key },
+            { 
+              read_key: data.read_key,
+              sensor: data.sensor_id,
+              timestamp: new Date(),
+            },
+            { upsert: false }
+        );
+
+        return res.status(200).send({
+          message: "Updated PurpleAir Account Successful.",
+          status: "SUCCESS",
+        });
+      }
+
       // Add the key to the database
       const user = await getUserByAddress(data.address);
-      console.log(data)
+
       const air_Account = new PurpleAirModel({
         miner_key: data.miner_key,
         read_key: data.read_key,

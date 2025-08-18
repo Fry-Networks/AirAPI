@@ -43,6 +43,8 @@ export const PebbleModel = AirAccountModel.discriminator('pebble_acc', PebbleSch
 const WXMSchema = new mongoose.Schema({
   token: { type: String, required: true },
   refresh_token: { type: String, required: true },
+  username: { type: String, required: true },
+  password: { type: String, required: true },
 });
 export const WXMModel = AirAccountModel.discriminator('wxm_acc', WXMSchema);
 

@@ -15,14 +15,20 @@ router.post("/api/getTemperature", async function (req, res) {
         };
         const existingAccount = await LacrosseData.exists({
             username: data.email,
-          });
+        });
 
-          if (existingAccount) {
-            return res.status(409).send({
-              message: "Account already exists in the database.",
-              status: "ERROR",
+        if (existingAccount) {
+            const result = await LacrosseData.findOne({
+                username: data.email,
             });
-          }
+
+            if (result?.miner_key !== data.miner_key) {
+                return res.status(409).send({
+                    message: "Account already exists in the database.",
+                    status: "ERROR",
+                });
+            }
+        }
 
         const token = await lacrosseLogin(data.email, data.password);
         const locations = await lacrosseGetLocations(token);
@@ -32,25 +38,41 @@ router.post("/api/getTemperature", async function (req, res) {
         for (const device of devices) {
             if (device.device_name) {
                 const weatherData = await lacrosseGetWeatherData(token, device);
-                const weatherRecord = new LacrosseData({
-                    miner_key: data.miner_key,
-                    username: data.email,
-                    password: data.password,
-                    device_id: device.device_id,
-                    device_name: device.device_name,
-                    walletAddress: data.walletAddress,
-                    Temperature: weatherData['Temperature'],
-                    Humidity: weatherData['Humidity'],
-                    HeatIndex: weatherData['HeatIndex'],
-                    BarometricPressure: weatherData['BarometricPressure'],
-                });
+                await LacrosseData.findOneAndUpdate(
+                    { miner_key: data.miner_key },
+                    { 
+                        username: data.email,
+                        password: data.password,
+                        device_id: device.device_id,
+                        device_name: device.device_name,
+                        walletAddress: data.walletAddress,
+                        Temperature: weatherData['Temperature'],
+                        Humidity: weatherData['Humidity'],
+                        HeatIndex: weatherData['HeatIndex'],
+                        BarometricPressure: weatherData['BarometricPressure'],
+                    },
+                    { upsert: true }
+                );
+          
+                // const weatherRecord = new LacrosseData({
+                //     miner_key: data.miner_key,
+                //     username: data.email,
+                //     password: data.password,
+                //     device_id: device.device_id,
+                //     device_name: device.device_name,
+                //     walletAddress: data.walletAddress,
+                //     Temperature: weatherData['Temperature'],
+                //     Humidity: weatherData['Humidity'],
+                //     HeatIndex: weatherData['HeatIndex'],
+                //     BarometricPressure: weatherData['BarometricPressure'],
+                // });
 
-                await weatherRecord.save();
+                // await weatherRecord.save();
                 return res.status(200).send({
                     message:
                       "Successfully linked your La Crosse Technology to your wallet address!",
                     status: "SUCCESS",
-                  });
+                });
             }
         }
 

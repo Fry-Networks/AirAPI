@@ -71,13 +71,18 @@ router.post("/api/submitGmcMap", async function (req, res) {
   console.log(`Received Param_ID: ${param_id}, MinerKey: ${miner_key}`);
 
   try {
-    const existingEntry = await GmcMapData.findOne({ param_id });
+    const existingEntry = await GmcMapData.exists({ param_id });
     if (existingEntry) {
-      console.error("paramID already exists:", param_id);
-      return res.status(409).json({
-        status: "ERROR",
-        message: "paramID already exists in the database",
+      const result = await GmcMapData.findOne({
+        param_id
       });
+
+      if (result?.minerKey !== miner_key) {
+        return res.status(409).send({
+            message: "paramID already exists in the database.",
+            status: "ERROR",
+        });
+      }
     }
 
     // const data = await scrapeData(param_id, miner_key);
@@ -90,6 +95,22 @@ router.post("/api/submitGmcMap", async function (req, res) {
     //       "No data found for the provided Param_ID. Geiger Counter Not Found.",
     //   });
     // }
+
+    if (existingEntry) {
+      await GmcMapData.findOneAndUpdate(
+          { minerKey: miner_key },
+          { 
+            paramID: param_id,
+            createdAt: new Date(Date.now()),
+          },
+          { upsert: false }
+      );
+
+      return res.status(200).send({
+        message: "Updated GmcMap Account Successful.",
+        status: "SUCCESS",
+      });
+    }
 
     const scrapedData = new GmcMapData({
       paramID: param_id,

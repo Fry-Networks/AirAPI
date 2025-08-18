@@ -17,7 +17,10 @@ router.post('/api/submitHDMiner', async function (req, res) {
       });
     }
 
-    if (hd_device && deviceMac.includes(hd_device.device_id)) {
+    const list: string[] = deviceMac;
+
+    if (hd_device && list.find(item => item.toLowerCase() === hd_device.device_id.toLowerCase())) {
+      console.log("log1")
       const miner_key = hd_device.miner_key;
 
       const DataCollection = await getCollectionByMinerKey(miner_key);
@@ -38,6 +41,7 @@ router.post('/api/submitHDMiner', async function (req, res) {
         status: 'SUCCESS',
       });
     } else {
+      console.log("log2")
       res.status(409).send({
         message: `Device ID isn't existed in the database.`,
         status: 'ERROR',

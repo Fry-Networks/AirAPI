@@ -63,12 +63,18 @@ router.post("/api/submitAwair", async (req: any, res: any) => {
     try {
         const { miner_key, token, deviceId, address } = req.body;
         // Check if the device already exists in the database
-        const existingDevice = await Awair.findOne({ deviceId: deviceId });
+        const existingDevice = await Awair.exists({ deviceId: deviceId });
         if (existingDevice) {
-            return res.status(400).send({
-                message: "ID already exists.",
-                status: "ERROR",
+            const result = await Awair.findOne({
+                deviceId: deviceId
             });
+    
+            if (result?.miner_key !== miner_key) {
+                return res.status(409).send({
+                    message: "ID already exists.",
+                    status: "ERROR",
+                });
+            }
         }
 
         const url = `https://developer-apis.awair.is/v1/users/self/devices/awair-element/${deviceId}/air-data/latest`;
@@ -81,6 +87,26 @@ router.post("/api/submitAwair", async (req: any, res: any) => {
             });
 
             const airData = response.data.data[0];
+
+            if (existingDevice) {
+                await Awair.findOneAndUpdate(
+                    { miner_key },
+                    { 
+                        deviceId: deviceId,
+                        token: token,
+                        timestamp: new Date(airData.timestamp),
+                        score: airData.score,
+                        sensors: airData.sensors,
+                        indices: airData.indices,
+                    },
+                    { upsert: false }
+                );
+          
+                return res.status(200).send({
+                  message: "Updated Awair Account Successful.",
+                  status: "SUCCESS",
+                });
+            }
 
             const newAirData = new Awair({
                 miner_key: miner_key,
@@ -96,7 +122,6 @@ router.post("/api/submitAwair", async (req: any, res: any) => {
                 }
             });
             await newAirData.save();
-            console.log('deviceData', response.data);
 
             res.status(200).send({
                 message: "Device information retrieved successfully.",

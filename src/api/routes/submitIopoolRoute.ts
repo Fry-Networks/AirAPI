@@ -28,15 +28,39 @@ router.post('/api/submitIopool', async function (req, res) {
 
     // Check if the API key already exists in the database
     const existingKey = await IopoolAccountModel.exists({ api_key: apiKey });
-
     if (existingKey) {
-      return res.status(409).send({
-        message: "This api key already exists in the database.",
-        status: "ERROR",
+      const result = await IopoolAccountModel.findOne({
+        api_key: apiKey,
       });
+
+      if (result?.miner_key !== miner_key) {
+        return res.status(409).send({
+            message: "This api key already exists in the database.",
+            status: "ERROR",
+        });
+      }
     }
     const { success, response } = await validateKey(apiKey);
     if (success) {
+      if (existingKey) {
+        await IopoolAccountModel.findOneAndUpdate(
+            { miner_key },
+            { 
+              api_key: apiKey,
+              title: response.title,
+              latestMeasure: response.latestMeasure,
+              iopool_id: response.id,
+              timestamp: new Date(),
+            },
+            { upsert: false }
+        );
+
+        return res.status(200).send({
+          message: "Updated Iopool Account Successful.",
+          status: "SUCCESS",
+        });
+      }
+
       const user = await getUserByAddress(address);
       const key = new IopoolAccountModel({
         miner_key,
