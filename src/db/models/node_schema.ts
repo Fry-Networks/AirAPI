@@ -15,6 +15,6 @@ export interface Node extends mongoose.Document {
   devices_id: string;
 }
 
-type NODE_TYPE = "Storage" | "Reward" | "Validator" | "Contributor";
+type NODE_TYPE = "Storage" | "Reward" | "Validator" | "Contributor" | "Ai";
 
 export const NodeAccount = mongoose.model('Node', NodeSchema);

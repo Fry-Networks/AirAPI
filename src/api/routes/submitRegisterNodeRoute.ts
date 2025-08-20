@@ -9,6 +9,7 @@ const minerType = {
   Reward: ["RDN"],
   Validator: ["SVN"],
   Contributor: ["CN"],
+  Ai: ["ANM"],
 };
 type MinerCategory = keyof typeof minerType;
 function getMinerCategory(miner_key: string): MinerCategory | null {
