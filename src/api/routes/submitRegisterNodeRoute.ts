@@ -26,6 +26,7 @@ router.post("/api/submitRegisterNode", async function (req, res) {
   try {
     const { miner_key, device_id, address } = req.body;
 
+    // const mac = device_id.replace(/-/g, ":");
     // Check if the key is already in the database
 
     const existingKey = await NodeAccount.exists({ miner_key });
@@ -76,13 +77,13 @@ router.post("/api/submitRegisterNode", async function (req, res) {
     });
     await device.save();
 
-    res.status(200).send({
+    return res.status(200).send({
       message: "Successfully linked your Device MAC to your miner key!",
       status: "SUCCESS",
     });
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).send({
+    return void res.status(500).send({
       message: "Internal server error.",
       status: "ERROR",
     });
