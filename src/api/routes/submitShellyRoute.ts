@@ -32,11 +32,10 @@ const fetchDataAndUpdate = async () => {
             const responseData = response.data;
             const device_status = responseData && responseData.length > 0 ? responseData[0].status : null;
 
-            // Update the latest data in ShellyAccount (overwrite if exists)
-            await ShellyModel.findOneAndUpdate(
-                { deviceId: responseData[0].id },
-                { devices: [{device_status: device_status}] },
-                { upsert: true }
+            // Update the latest data in ShellyAccount (only if account exists)
+            await ShellyModel.updateOne(
+                { deviceId: responseData[0].id, minerKey },
+                { $set: { devices: [{ device_status }] } },
             );
 
             const DataCollection = await getCollectionByMinerKey(minerKey);
@@ -71,21 +70,13 @@ function extractErrorMessage(errors: any) {
 
 router.post("/api/submitShelly", async (req, res) => {
     const { minerKey, serverURL, deviceID, authKey, address } = req.body;
-    const existingKey = await ShellyModel.exists({
-        deviceId: deviceID,
-    });
-
-    if (existingKey) {
-        const result = await ShellyModel.findOne({
-            deviceId: deviceID,
+    // Conflict: device already linked to different miner
+    const conflicting = await ShellyModel.findOne({ deviceId: deviceID, minerKey: { $ne: minerKey } });
+    if (conflicting) {
+        return res.status(409).send({
+            message: "Already registered in the database.",
+            status: "ERROR",
         });
-
-        if (result?.minerKey !== minerKey) {
-            return res.status(409).send({
-                message: "Already registered in the database.",
-                status: "ERROR",
-            });
-        }
     }
 
     try {
@@ -113,38 +104,29 @@ router.post("/api/submitShelly", async (req, res) => {
         const responseData = response.data;
         const device_status = responseData && responseData.length > 0 ? responseData[0].status : null;
 
-        if (existingKey) {
-            await ShellyModel.findOneAndUpdate(
-                { minerKey },
-                { 
-                    deviceId: deviceID,
-                    authKey,
-                    serverUrl: serverURL,
-                    devices: [{ device_status }]
-                },
-                { upsert: false }
-            );
+        const existingByMiner = await ShellyModel.findOne({ minerKey });
+        await ShellyModel.findOneAndUpdate(
+            { minerKey },
+            { 
+                minerKey,
+                deviceId: deviceID,
+                authKey,
+                serverUrl: serverURL,
+                api_type: "Shelly",
+                address,
+                devices: [{ device_status }]
+            },
+            { upsert: true }
+        );
 
+        if (existingByMiner) {
             return res.status(200).send({
-              message: "Updated Shelly API Successful.",
-              status: "SUCCESS",
+                message: "Updated Shelly API Successful.",
+                status: "SUCCESS",
             });
         }
 
-        // Save latest data in ShellyAccount (without overwriting)
-        const shellyAccountData = {
-            minerKey,
-            deviceId: deviceID,
-            authKey,
-            api_type: "Shelly",
-            serverUrl: serverURL,
-            address,
-            devices: [{ device_status }]
-        };
-    
-        await ShellyModel.create(shellyAccountData);
-
-        res.status(200).send({
+        return res.status(200).send({
             message: "Shelly API successful.",
             data: responseData,
             status: "SUCCESS",
