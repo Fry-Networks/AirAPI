@@ -1,74 +1,81 @@
+
+import axios from "axios";
 import express from "express";
 import { TempestData } from "../../db/models/tempest_schema.js";
-import { getUserByAddress } from "../../db/models/users-schema.js";
+import { getCollectionByMinerKey } from "../../db/models/data.js";
 
 const router = express.Router();
 
-router.post("/api/submitTempestKey", async function (req, res) {
+router.post("/api/submitTempest", async (req, res) => {
+  const { minerKey, stationID, token, address } = req.body;
+
+  // Conflict: station already linked to different miner
+  const conflicting = await TempestData.findOne({ station_id: stationID, minerKey: { $ne: minerKey } });
+  if (conflicting) {
+    return res.status(409).send({
+      message: "Already registered in the database.",
+      status: "ERROR",
+    });
+  }
+
   try {
-    const data = req.body;
+    const apiUrl = `https://swd.weatherflow.com/swd/rest/observations/station/${stationID}?token=${token}`;
+    const response = await axios.get(apiUrl);
 
-    // Check for existing station_id
-    const existingStation = await TempestData.exists({
-      station_id: data.station_id,
-    });
-
-    if (existingStation) {
-      const result = await TempestData.findOne({
-        station_id: data.station_id,
-      });
-
-      if (result?.minerKey !== data.minerKey) {
-        return res.status(409).send({
-          message: "Station ID already exists in the database.",
-          status: "ERROR",
-        });
-      }
-    }
-
-    if (existingStation) {
-      await TempestData.findOneAndUpdate(
-        { minerKey: data.minerKey },
-        {
-          station_id: data.station_id,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          elevation: data.elevation,
-          timestamp: new Date(),
-        },
-        { upsert: false }
-      );
-
-      return res.status(200).send({
-        message: "Updated Tempest Account Successful.",
-        status: "SUCCESS",
+    if (!response.data || response.data.status.status_code !== 0) {
+      return res.status(400).send({
+        message: response.data?.status?.status_message || "API error",
+        status: "ERROR",
       });
     }
 
-    const user = await getUserByAddress(data.address);
+    const tempestData = response.data;
+    const obs = tempestData.obs || [];
+    const latestObs = obs.length > 0 ? obs[0] : null;
 
-    const tempestAccount = new TempestData({
-      minerKey: data.minerKey,
-      user_id: user._id,
-      timestamp: new Date(),
-      station_id: data.station_id,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      elevation: data.elevation,
-      walletAddress: data.address,
-    });
+    await TempestData.findOneAndUpdate(
+      { minerKey },
+      {
+        minerKey,
+        station_id: stationID,
+        token,
+        address,
+        latitude: tempestData.latitude,
+        longitude: tempestData.longitude,
+        elevation: tempestData.elevation,
+        station_name: tempestData.station_name,
+        public_name: tempestData.public_name,
+        is_public: tempestData.is_public,
+        timezone: tempestData.timezone,
+        obs,
+        station_units: tempestData.station_units,
+        devices: latestObs ? [latestObs] : [],
+        timestamp: new Date(),
+      },
+      { upsert: true }
+    );
 
-    await tempestAccount.save();
+    // Save latest observation to a Tempest collection (by miner)
+    if (latestObs) {
+      const DataCollection = await getCollectionByMinerKey(minerKey);
+      const data = new DataCollection({
+        miner_key: minerKey,
+        status: "online",
+        deviceDataString: latestObs,
+        timestamp: new Date(),
+      });
+      await data.save();
+    }
 
-    res.status(200).send({
-      message:
-        "Successfully linked your Tempest station to your wallet address! Data will be retrieved soon.",
+    return res.status(200).send({
+      message: "Tempest API successful.",
+      data: tempestData,
       status: "SUCCESS",
     });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).send({
-      message: "Internal server error.",
+      message: error?.response?.data?.status?.status_message || "Internal server error.",
       status: "ERROR",
     });
   }
