@@ -18,7 +18,6 @@ import { WXMModel } from "../../db/models/air_accounts.js";
 import { RtspLink } from '../../db/models/rtsp_schema.js';
 import { HardwareAccount } from "../../db/models/hardware_schema.js";
 import { NodeAccount } from "../../db/models/node_schema.js";
-import { TempestData } from "db/models/tempest_schema.js";
 
 const router = express.Router();
 
@@ -174,14 +173,6 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await NodeAccount.exists({ miner_key });
           if (existingKey) {
             const doc = await NodeAccount.findOne({ miner_key });
-            return void res.status(200).send({
-              data: doc
-            });
-          }
-        } else if (type === 'tempest') {
-          const existingKey = await TempestData.exists({ minerKey: miner_key });
-          if (existingKey) {
-            const doc = await TempestData.findOne({ minerKey: miner_key });
             return void res.status(200).send({
               data: doc
             });
