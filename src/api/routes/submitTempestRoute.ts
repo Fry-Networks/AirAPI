@@ -1,3 +1,4 @@
+
 import axios from "axios";
 import express from "express";
 import { TempestData } from "../../db/models/tempest_schema.js";
@@ -73,13 +74,7 @@ router.post("/api/submitTempest", async (req, res) => {
     });
   } catch (error) {
     console.error("Error:", error);
-    let errorMessage = "Internal server error.";
-    if (typeof error === "object" && error !== null && "response" in error) {
-      const axiosError = error as any;
-      errorMessage = axiosError?.response?.data?.status?.status_message || axiosError?.response?.data?.message || errorMessage;
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
-    }
+    const errorMessage = error?.response?.data?.status?.status_message || "Internal server error.";
     res.status(500).send({
       message: errorMessage,
       status: "ERROR",
