@@ -23,7 +23,6 @@ import submitNodeMinerRoute from './routes/submitNodeMinerRoute.js';
 import submitCameraRoute from './routes/submitCameraRoute.js';
 import submitTapoRoute from './routes/submitTapoRoute.js';
 import submitShellyRoute from './routes/submitShellyRoute.js';
-import submitTempestRoute from './routes/submitTempestRoute.js';
 import getDeviceCredential from './routes/getDeviceCredentialRoute.js';
 
 const app = express();
@@ -36,12 +35,7 @@ const app = express();
 //   })
 // );
 
-app.use(cors({
-  origin: "https://dashboard.frynetworks.com",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}));
+app.use(cors());
 
 app.use(bodyparser.json());
 
@@ -90,7 +84,6 @@ app.use(submitCameraRoute);
 app.use(submitTapoRoute);
 app.use(submitShellyRoute);
 app.use(getDeviceCredential);
-app.use(submitTempestRoute);
 
 export async function startApi() {
   await connect();
