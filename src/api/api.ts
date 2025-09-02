@@ -1,5 +1,5 @@
-import cors from 'cors';
 import bodyparser from "body-parser";
+import cors from 'cors';
 import express from "express";
 import { rateLimit } from "express-rate-limit";
 import { connect } from "../db/connect.js";
@@ -28,7 +28,14 @@ import getDeviceCredential from './routes/getDeviceCredentialRoute.js';
 
 const app = express();
 
-// CORS middleware FIRST
+// app.use(
+//   cors({
+//     origin: ["http://localhost:3000", "https://registration-portal-beryl.vercel.app"], // Change this to your frontend URL
+//     methods: "GET, POST, OPTIONS",
+//     allowedHeaders: "Content-Type",
+//   })
+// );
+
 app.use(cors({
   origin: "https://dashboard.frynetworks.com",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
