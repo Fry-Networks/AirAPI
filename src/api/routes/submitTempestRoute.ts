@@ -74,9 +74,8 @@ router.post("/api/submitTempest", async (req, res) => {
     });
   } catch (error) {
     console.error("Error:", error);
-    const errorMessage = error?.response?.data?.status?.status_message || "Internal server error.";
     res.status(500).send({
-      message: errorMessage,
+      message: error?.response?.data?.status?.status_message || "Internal server error.",
       status: "ERROR",
     });
   }
