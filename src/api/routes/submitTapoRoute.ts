@@ -1,27 +1,12 @@
 import express from "express";
-import { TapoModel } from '../../db/models/tapo_schema.js';
 import { cloudLogin, loginDeviceByIp } from "tp-link-tapo-connect";
+import { DeviceCredentials } from "../../db/models/device_credentials.js";
 
 const router = express.Router();
 router.post("/api/tapoControl", async (req, res) => {
     const { minerKey, email, password, deviceIp, address } = req.body;
 
-    const existingKey = await TapoModel.exists({
-        email: email,
-    });
-
-    if (existingKey) {
-        const result = await TapoModel.findOne({
-            email: email,
-        });
-
-        if (result?.minerKey !== minerKey) {
-            return res.status(409).send({
-                message: "Already registered in the database.",
-                status: "ERROR",
-            });
-        }
-    }
+    // Minimal API: no DB duplication checks; only validate then save credentials
 
     // Hardcoded email and password for testing
     // const email = "saf7001@gmail.com";
@@ -53,38 +38,13 @@ router.post("/api/tapoControl", async (req, res) => {
         // // Example: Turn off the device
         // await device.turnOff();
 
-        if (existingKey) {
-            await TapoModel.findOneAndUpdate(
-                { minerKey },
-                { 
-                    email,
-                    password,
-                    deviceIp,
-                },
-                { upsert: false }
-            );
+        await DeviceCredentials.findOneAndUpdate(
+          { miner_key: minerKey, type: 'tapo' },
+          { $set: { miner_key: minerKey, type: 'tapo', address, credentials: { email, password, deviceIp } } },
+          { upsert: true, new: true }
+        );
 
-            return res.status(200).send({
-              message: "Updated Tapo Acccount Successful.",
-              status: "SUCCESS",
-            });
-        }
-
-        const tapoAccountData = {
-            minerKey,
-            email,
-            password,
-            deviceIp,
-            api_type: "Tapo",
-            address,
-        };
-    
-        await TapoModel.create(tapoAccountData);
-
-        res.status(200).send({
-            message: "Tapo is working.",
-            status: "SUCCESS",
-        });
+        res.status(200).send({ message: "Tapo credentials validated and saved.", status: "SUCCESS" });
     } catch (error: any) {
         console.error("Error:", error);  // Keep the original message for context
         res.status(500).send({

@@ -1,11 +1,14 @@
 import express from "express";
-import { PebbleAccount, PebbleModel } from "../../db/models/air_accounts.js";
-import axios from "axios";
-import { getUserByAddress } from "../../db/models/users-schema.js";
-import { newApiKeyEvent } from "../../db/connect.js";
-import PebbleApi from "../../services/api/pebble.js";
+import { request, gql } from 'graphql-request';
+import { DeviceCredentials } from "../../db/models/device_credentials.js";
 
 const router = express.Router();
+// Enable by setting env var DEBUG_PEBBLE=1
+const debugPebble = (...args: any[]) => {
+  if (process.env.DEBUG_PEBBLE === '1') {
+    console.log('[Pebble]', ...args);
+  }
+};
 
 router.post("/api/submitpebble", async function (req, res) {
     try {
@@ -16,85 +19,70 @@ router.post("/api/submitpebble", async function (req, res) {
           address: string
         } = req.body;
         console.log(data);
-        // Check if the key is already in the database
-        const existingImei = await PebbleModel.exists({ imei: data.imei });
-    
-        if (existingImei) {
-          const result: PebbleAccount | null = await PebbleModel.findOne({
-            imei: data.imei,
-          });
-  
-          if (result?.miner_key !== data.miner_key) {
-              return res.status(409).send({
-                message: "Imei already exists in database.",
-                status: "ERROR",
-              });
-          }
-        }
         // Check regex
         const regexCheck = /^[0-9]{15}$/.test(data.imei);
+        debugPebble('IMEI regexCheck:', regexCheck, 'imei:', data.imei);
         if (!regexCheck) {
           return void res.status(400).send({
             message: "Imei is invalid. (Didn't pass regex check)",
             status: "ERROR",
           });
         }
-        // Check if the key is valid by making a request to the API
-        //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
+        // Verify ownership via GraphQL endpoint
         try {
-          const isOwner = await PebbleApi.verifyOwnership(data.imei, data.erc_addr);
-          console.log(isOwner);
-          if (!isOwner) {
-            return void res.status(400).send({
-              message: "Failed to ensure ownership of the pebble tracker (imeil and owner (ERC20 address) do not match)",
+          const url = 'https://pebble.iotex.me/v1/graphql';
+          const q1 = gql`
+            query {
+              pebble_device_record(limit: 1, where: { imei: { _eq: "${data.imei}" } }) {
+                id
+              }
+            }
+          `;
+          const r1: { pebble_device_record: { id: string }[] } = await request(url, q1);
+          debugPebble('GraphQL r1 pebble_device_record count:', r1?.pebble_device_record?.length ?? 0, 'for IMEI:', data.imei);
+          if (!r1.pebble_device_record || r1.pebble_device_record.length === 0) {
+            debugPebble('IMEI not found in GraphQL for IMEI:', data.imei, 'raw r1:', r1);
+            return res.status(400).send({
+              message: "IMEI not found.",
               status: "ERROR",
             });
           }
+          const deviceId = r1.pebble_device_record[0].id.split('-')[0];
+          debugPebble('Resolved deviceId prefix:', deviceId, 'for IMEI:', data.imei);
+          const q2 = gql`
+            query {
+              pebble_device(limit: 1, where: { id: { _like: "${deviceId}%" } }) { owner }
+            }
+          `;
+          const r2: { pebble_device: { owner: string }[] } = await request(url, q2);
+          const owner = r2.pebble_device?.[0]?.owner;
+          debugPebble('GraphQL owner:', owner, 'provided erc_addr:', data.erc_addr);
+          if (!owner || owner.toLowerCase() !== data.erc_addr.toLowerCase()) {
+            debugPebble('Owner mismatch', { graphOwner: owner, provided: data.erc_addr });
+            return res.status(400).send({
+              message: "Ownership does not match ERC20 address.",
+              status: "ERROR",
+            });
+          }
+
+          await DeviceCredentials.findOneAndUpdate(
+            { miner_key: data.miner_key, type: 'pebble' },
+            { $set: { miner_key: data.miner_key, type: 'pebble', address: data.address, credentials: { imei: data.imei, owner: data.erc_addr.toLowerCase() } } },
+            { upsert: true, new: true }
+          );
+
+          res.status(200).send({
+            message: "Pebble credentials validated and saved.",
+            status: "SUCCESS",
+          });
         } catch (e) {
           console.log(e);
+          debugPebble('GraphQL ownership verification error:', (e as any)?.message ?? e);
           return void res.status(400).send({
-            message: "Failed to ensure ownership of the pebble tracker (imeil and owner (ERC20 address) do not match)",
+            message: "Failed to ensure ownership of the pebble tracker.",
             status: "ERROR",
           });
         }
-
-        if (existingImei) {
-          await PebbleModel.findOneAndUpdate(
-              { miner_key: data.miner_key },
-              { 
-                imei: data.imei,
-                owner: data.erc_addr.toLowerCase(),
-                timestamp: new Date(),
-              },
-              { upsert: false }
-          );
-  
-          return res.status(200).send({
-            message: "Updated Pebble Account Successful.",
-            status: "SUCCESS",
-          });
-        }
-
-        // Add the key to the database
-        const user = await getUserByAddress(data.address);
-    
-        const key = new PebbleModel({
-          miner_key: data.miner_key,
-          imei: data.imei,
-          user_id: user._id,
-          address: data.address,
-          timestamp: new Date(),
-          owner: data.erc_addr.toLowerCase(),
-          api_type: "Pebble",
-        });
-        await key.save();
-        newApiKeyEvent.emit("newApiKey", key._id);
-    
-        res.status(200).send({
-          message:
-            "Successfully linked your Pebble device to your wallet address!\nWe will soon begin to retreive data from it.",
-          status: "SUCCESS",
-        });
       } catch (e) {
         res.status(500).send({
           message: "Internal server error.",

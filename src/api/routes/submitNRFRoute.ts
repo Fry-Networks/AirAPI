@@ -1,114 +1,12 @@
 import axios from "axios";
 import express, { Request, Response } from "express";
-import { RequestBody } from "types/nrfTypes.js";
-import { getCollectionByMinerKey } from "../../db/models/data.js";
-import { NrfData, Nrf } from "../../db/models/nrf_schema.js";
+import { DeviceCredentials } from "../../db/models/device_credentials.js";
 
 const router = express.Router();
 
-const fetchDataAndUpdate = async () => {
-    try {
-        const nrfDevices = await Nrf.find();
+// Minimal: only credential validation
 
-        for (const device of nrfDevices) {
-            const { miner_key, id, walletAddress, token } = device;
-
-            if (!miner_key)
-                continue;
-
-            const response = await axios.get(
-                `https://api.nrfcloud.com/v1/devices/${id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            const newData = response.data;
-
-            const existingData = await Nrf.findOne({ id: newData.id });
-
-            if (
-                existingData &&
-                JSON.stringify(existingData) !== JSON.stringify(newData)
-            ) {
-                // Data has changed, update the latest data collection
-                await Nrf.findOneAndUpdate(
-                    { id: newData.id },
-                    {
-                        walletAddress,
-                        id: newData.id,
-                        tags: newData.tags,
-                        tenantId: newData.tenantId,
-                        meta: {
-                            updatedAt: newData.$meta.updatedAt,
-                            createdAt: newData.$meta.createdAt,
-                        },
-                        name: newData.name,
-                        type: newData.type,
-                        subType: newData.subType,
-                        firmware: newData.firmware,
-                        cloudMqttEnabled: newData.cloudMqttEnabled,
-                        state: newData.state,
-                        metaStateData: {
-                            desired: newData.state.metadata?.desired,
-                            reported: newData.state.metadata?.reported,
-                            version: newData.state.version,
-                        },
-                        metadata: {
-                            data_type: "nrf",
-                        },
-                    },
-                    { upsert: true }
-                );
-            }
-
-            const DataCollection = await getCollectionByMinerKey(miner_key);
-            const dataObject = {
-                id: newData.id,
-                tags: newData.tags,
-                tenantId: newData.tenantId,
-                meta: {
-                    updatedAt: newData.$meta.updatedAt,
-                    createdAt: newData.$meta.createdAt,
-                },
-                name: newData.name,
-                type: newData.type,
-                subType: newData.subType,
-                firmware: newData.firmware,
-                cloudMqttEnabled: newData.cloudMqttEnabled,
-                state: newData.state,
-                metaStateData: {
-                    desired: newData.state.metadata?.desired,
-                    reported: newData.state.metadata?.reported,
-                    version: newData.state.version,
-                },
-                timestamp: new Date(),
-                metadata: {
-                  data_type: "Nrf",
-                },
-            } as NrfData;
-
-            const data = new DataCollection({
-                miner_key,
-                status: newData === null ? 'offline' : 'online',
-                deviceDataString: dataObject,
-                timestamp: new Date(),
-            });
-
-            await data.save();
-        }
-        console.log("Data fetch and update completed.");
-    } catch (error) {
-        console.error("Error fetching or updating data:", error);
-    }
-};
-
-fetchDataAndUpdate();
-setInterval(fetchDataAndUpdate, 10 * 60 * 1000); // Run every 10 minutes
-
-router.post("/api/submitNRF", async (req: Request<{}, {}, RequestBody>, res: Response) => {
+router.post("/api/submitNRF", async (req: Request, res: Response) => {
         
         try {
             const { miner_key, token, deviceId, address } = req.body;
@@ -122,21 +20,6 @@ router.post("/api/submitNRF", async (req: Request<{}, {}, RequestBody>, res: Res
                     });
             }
 
-            // Check if the device already exists in the database
-            const existingDevice = await Nrf.exists({ id: deviceId });
-            if (existingDevice) {
-                const result = await Nrf.findOne({
-                    id: deviceId,
-                });
-        
-                if (result?.miner_key !== miner_key) {
-                    return res.status(409).send({
-                        message: "ID already exists.",
-                        status: "ERROR",
-                    });
-                }
-            }
-
             try {
                 const response = await axios.get(
                     `https://api.nrfcloud.com/v1/devices/${deviceId}`,
@@ -146,78 +29,13 @@ router.post("/api/submitNRF", async (req: Request<{}, {}, RequestBody>, res: Res
                         },
                     }
                 );
+                await DeviceCredentials.findOneAndUpdate(
+                  { miner_key, type: 'nrf' },
+                  { $set: { miner_key, type: 'nrf', address, credentials: { token, deviceId } } },
+                  { upsert: true, new: true }
+                );
 
-                const deviceData = response.data;
-                console.log("deviceData", deviceData);
-
-                if (existingDevice) {
-                    await Nrf.findOneAndUpdate(
-                        { miner_key },
-                        { 
-                            token: token,
-                            id: deviceId,
-                            tags: deviceData.tags,
-                            tenantId: deviceData.tenantId,
-                            meta: {
-                                updatedAt: deviceData.$meta.updatedAt,
-                                createdAt: deviceData.$meta.createdAt,
-                            },
-                            name: deviceData.name,
-                            type: deviceData.type,
-                            subType: deviceData.subType,
-                            firmware: deviceData.firmware,
-                            cloudMqttEnabled: deviceData.cloudMqttEnabled,
-                            state: deviceData.state,
-                            metaStateData: {
-                                desired: deviceData.state.metadata?.desired,
-                                reported: deviceData.state.metadata?.reported,
-                                version: deviceData.state.version,
-                            },
-                            timestamp: new Date(),
-                        },
-                        { upsert: false }
-                    );
-            
-                    return res.status(200).send({
-                      message: "Updated NRF Account Successful.",
-                      status: "SUCCESS",
-                    });
-                }
-
-                const device = new Nrf({
-                    miner_key,
-                    token: token,
-                    walletAddress: address,
-                    id: deviceData.id,
-                    tags: deviceData.tags,
-                    tenantId: deviceData.tenantId,
-                    meta: {
-                        updatedAt: deviceData.$meta.updatedAt,
-                        createdAt: deviceData.$meta.createdAt,
-                    },
-                    name: deviceData.name,
-                    type: deviceData.type,
-                    subType: deviceData.subType,
-                    firmware: deviceData.firmware,
-                    cloudMqttEnabled: deviceData.cloudMqttEnabled,
-                    state: deviceData.state,
-                    metaStateData: {
-                        desired: deviceData.state.metadata?.desired,
-                        reported: deviceData.state.metadata?.reported,
-                        version: deviceData.state.version,
-                    },
-                    metadata: {
-                        data_type: "Nrf",
-                    },
-                });
-
-                await device.save();
-
-                res.status(200).send({
-                    message: "Device information retrieved successfully.",
-                    status: "SUCCESS",
-                    data: deviceData,
-                });
+                res.status(200).send({ message: "NRF credentials validated and saved.", status: "SUCCESS" });
             } catch (error: any) {
                 return res.status(400).send({
                     message: "Invalid API key or device ID.",

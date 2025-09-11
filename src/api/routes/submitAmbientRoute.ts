@@ -1,33 +1,13 @@
 import express from "express";
-import { AmbientAccount, AmbientModel } from "../../db/models/air_accounts.js";
 import axios from "axios";
-import { getUserByAddress } from "../../db/models/users-schema.js";
-import { newApiKeyEvent } from "../../db/connect.js";
+import { DeviceCredentials } from "../../db/models/device_credentials.js";
 
 const router = express.Router();
 
 router.post("/api/submitkey", async function (req, res) {
     try {
-        const data: {
-          miner_key: string;
-          key: string;
-          address: string;
-        } = req.body;
+        const data: { miner_key: string; key: string; address?: string } = req.body;
         console.log(data);
-        // Check if the key is already in the database
-        const existingKey = await AmbientModel.exists({ api_key: data.key }) ;
-        if (existingKey) {
-          const result: AmbientAccount | null = await AmbientModel.findOne({
-            api_key: data.key
-          });
-  
-          if (result?.miner_key !== data.miner_key) {
-              return res.status(409).send({
-                  message: "Key already exists in database.",
-                  status: "ERROR",
-              });
-          }
-        }
         // Check regex
         const regexCheck = /^[a-z0-9]{64}$/.test(data.key);
         if (!regexCheck) {
@@ -48,40 +28,21 @@ router.post("/api/submitkey", async function (req, res) {
             status: "ERROR",
           });
         }
-
-        if (existingKey) {
-          await AmbientModel.findOneAndUpdate(
-            { miner_key: data.miner_key },
-            { 
-              api_key: data.key,
-              timestamp: new Date(),
+        await DeviceCredentials.findOneAndUpdate(
+          { miner_key: data.miner_key, type: 'ambient' },
+          {
+            $set: {
+              miner_key: data.miner_key,
+              type: 'ambient',
+              address: data.address,
+              credentials: { api_key: data.key },
             },
-            { upsert: false }
-          );
-    
-          return res.status(200).send({
-            message: "Updated Ambient Account Successful.",
-            status: "SUCCESS",
-          });
-        }
+          },
+          { upsert: true, new: true }
+        );
 
-        // Add the key to the database
-        const user = await getUserByAddress(data.address);
-    
-        const key = new AmbientModel({
-          miner_key: data.miner_key,
-          api_key: data.key,
-          user_id: user._id,
-          address: data.address,
-          timestamp: new Date(),
-          api_type: "Ambient",
-        });
-        await key.save();
-        newApiKeyEvent.emit("newApiKey", key._id);
-    
         res.status(200).send({
-          message:
-            "Successfully linked your API Key to your wallet address!\nWe will soon begin to retreive data from your air stations/devices.",
+          message: "Ambient key validated and saved.",
           status: "SUCCESS",
         });
       } catch (e) {

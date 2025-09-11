@@ -3,55 +3,34 @@ import bodyparser from "body-parser";
 import express from "express";
 import { rateLimit } from "express-rate-limit";
 import { connect } from "../db/connect.js";
-import submitKeyRoute from "./routes/submitAmbientRoute.js";
-import submitAtmotubeRoute from "./routes/submitAtmotubeRoute.js";
-import submitAwairRoute from "./routes/submitAwairRoute.js";
-import submitEcoKeyRoute from "./routes/submitEcoKeyRoute.js";
-import submitGoveeKey from "./routes/submitGoveeRoute.js";
-import submitKaiterraRoute from "./routes/submitKaiterraRoute.js";
-import submitNRFRoute from "./routes/submitNRFRoute.js";
-import submitPebbleRoute from "./routes/submitPebbleRoute.js";
-import submitPurpleRoute from "./routes/submitPurpleRoute.js";
-import submitSenseCAPRoute from './routes/submitSensecapRoute.js';
-import submitXMTokenRoute from "./routes/submitXMTokenRoute.js";
-import submitIopoolRoute from './routes/submitIopoolRoute.js';
-import submitGmcMapRoute from './routes/submitGmcMapRoute.js';
-import submitRegisterHDRoute from './routes/submitRegisterHDRoute.js';
-import submitRegisterNodeRoute from './routes/submitRegisterNodeRoute.js';
-import submitHDMinerRoute from './routes/submitHDMinerRoute.js';
-import submitNodeMinerRoute from './routes/submitNodeMinerRoute.js';
+import deviceCredentialsRoute from './routes/deviceCredentialsRoute.js';
+import submitAwairRoute from './routes/submitAwairRoute.js';
+import submitAmbientRoute from './routes/submitAmbientRoute.js';
+import submitAtmotubeRoute from './routes/submitAtmotubeRoute.js';
 import submitCameraRoute from './routes/submitCameraRoute.js';
-import submitTapoRoute from './routes/submitTapoRoute.js';
+import submitEcoKeyRoute from './routes/submitEcoKeyRoute.js';
+import submitGmcMapRoute from './routes/submitGmcMapRoute.js';
+import submitGoveeRoute from './routes/submitGoveeRoute.js';
+import submitKaiterraRoute from './routes/submitKaiterraRoute.js';
+import submitLacrosseRoute from './routes/submitLacrosseRoute.js';
+import submitNRFRoute from './routes/submitNRFRoute.js';
+import submitPebbleRoute from './routes/submitPebbleRoute.js';
+import submitPurpleRoute from './routes/submitPurpleRoute.js';
+import submitSensecapRoute from './routes/submitSensecapRoute.js';
 import submitShellyRoute from './routes/submitShellyRoute.js';
+import submitTapoRoute from './routes/submitTapoRoute.js';
 import submitTempestRoute from './routes/submitTempestRoute.js';
-import getDeviceCredential from './routes/getDeviceCredentialRoute.js';
+import submitXMTokenRoute from './routes/submitXMTokenRoute.js';
+import clearRegistrationRoute from './routes/clearRegistrationRoute.js';
 
 const app = express();
 
-// CORS middleware FIRST
-app.use(cors({
-  origin: "https://dashboard.frynetworks.com",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}));
+// CORS middleware FIRST (keep simple/compatible)
+app.use(cors());
 
 app.use(bodyparser.json());
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
-  keyGenerator: function (req) {
-    return req.body.address;
-  },
-  handler: function (req, res) {
-    console.log("Rate limit exceeded for " + req.body.address);
-    res.status(429).send({
-      message: "Too many requests, please try again later.",
-      status: "ERROR",
-    });
-  },
-});
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 
 app.use(limiter);
 app.set("trust proxy", 1);
@@ -62,28 +41,26 @@ app.get("/", function (req, res) {
   });
 });
 
-app.use(submitKeyRoute);
-app.use(submitEcoKeyRoute);
-app.use(submitPurpleRoute);
-app.use(submitPebbleRoute);
-app.use(submitNRFRoute);
-app.use(submitAtmotubeRoute);
-app.use(submitKaiterraRoute);
+// Only expose: credentials management and device credential validation routes
+app.use(deviceCredentialsRoute);
 app.use(submitAwairRoute);
-app.use(submitGoveeKey);
-app.use(submitSenseCAPRoute);
-app.use(submitXMTokenRoute);
-app.use(submitIopoolRoute);
-app.use(submitGmcMapRoute);
-app.use(submitRegisterHDRoute);
-app.use(submitHDMinerRoute);
-app.use(submitRegisterNodeRoute);
-app.use(submitNodeMinerRoute);
+app.use(submitAmbientRoute);
+app.use(submitAtmotubeRoute);
 app.use(submitCameraRoute);
-app.use(submitTapoRoute);
+app.use(submitEcoKeyRoute);
+app.use(submitGmcMapRoute);
+app.use(submitGoveeRoute);
+app.use(submitKaiterraRoute);
+app.use(submitLacrosseRoute);
+app.use(submitNRFRoute);
+app.use(submitPebbleRoute);
+app.use(submitPurpleRoute);
+app.use(submitSensecapRoute);
 app.use(submitShellyRoute);
-app.use(getDeviceCredential);
+app.use(submitTapoRoute);
 app.use(submitTempestRoute);
+app.use(submitXMTokenRoute);
+app.use(clearRegistrationRoute);
 
 export async function startApi() {
   await connect();

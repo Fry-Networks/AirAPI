@@ -1,5 +1,5 @@
 import express from 'express';
-import { RtspLink } from '../../db/models/rtsp_schema.js';
+import { DeviceCredentials } from '../../db/models/device_credentials.js';
 // import { checkRtspLink } from '../../service/checkRtspLink.js';
 
 const router = express.Router();
@@ -115,52 +115,15 @@ router.post('/api/validateRtsp', async (req, res) => {
     });
   }
 
-  const existingKey = await RtspLink.exists({ rtspUrl: rtspUrl });
-  if (existingKey) {
-    const result = await RtspLink.findOne({
-      rtspUrl: rtspUrl,
-    });
-
-    if (result?.minerKey !== minerKey) {
-      return res.status(409).send({
-          message: "RTSP URL already exists in database.",
-          status: "ERROR",
-      });
-    }
-  }
-
   try {
     const isValid = await checkRtspLink(rtspUrl);
     if (isValid) {
-      if (existingKey) {
-        await RtspLink.findOneAndUpdate(
-            { minerKey },
-            { 
-              rtspUrl,
-            },
-            { upsert: false }
-        );
-  
-        return res.status(200).send({
-          message: "Updated RTSP Link Successful.",
-          status: "SUCCESS",
-        });
-      }
-
-      const rtspLink = new RtspLink({
-        rtspUrl,
-        minerKey,
-        walletAddress: address,
-        metadata: {
-          data_type: "rstp",
-        }
-      });
-      await rtspLink.save();
-
-      return res.status(200).json({
-        status: 'SUCCESS',
-        message: 'RTSP link is valid and accessible',
-      });
+      await DeviceCredentials.findOneAndUpdate(
+        { miner_key: minerKey, type: 'camera' },
+        { $set: { miner_key: minerKey, type: 'camera', address, credentials: { rtspUrl } } },
+        { upsert: true, new: true }
+      );
+      return res.status(200).json({ status: 'SUCCESS', message: 'RTSP link is valid and saved' });
     } else {
       return res.status(400).json({
         status: 'ERROR',

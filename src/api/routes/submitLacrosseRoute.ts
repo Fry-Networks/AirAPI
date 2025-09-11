@@ -1,7 +1,6 @@
 import axios from "axios";
 import express from "express";
-import { LacrosseData } from "../../db/models/lacrosse-schema.js";
-import { getCollectionByMinerKey } from "../../db/models/data.js";
+import { DeviceCredentials } from "../../db/models/device_credentials.js";
 
 const router = express.Router();
 
@@ -13,75 +12,20 @@ router.post("/api/getTemperature", async function (req, res) {
             password: req.body.password,
             walletAddress: req.body.address
         };
-        const existingAccount = await LacrosseData.exists({
-            username: data.email,
-        });
-
-        if (existingAccount) {
-            const result = await LacrosseData.findOne({
-                username: data.email,
-            });
-
-            if (result?.miner_key !== data.miner_key) {
-                return res.status(409).send({
-                    message: "Account already exists in the database.",
-                    status: "ERROR",
-                });
-            }
-        }
 
         const token = await lacrosseLogin(data.email, data.password);
-        const locations = await lacrosseGetLocations(token);
-        const devices = await lacrosseGetDevices(token, locations);
+        await lacrosseGetLocations(token); // basic validation
 
-        // Find the temperature device
-        for (const device of devices) {
-            if (device.device_name) {
-                const weatherData = await lacrosseGetWeatherData(token, device);
-                await LacrosseData.findOneAndUpdate(
-                    { miner_key: data.miner_key },
-                    { 
-                        username: data.email,
-                        password: data.password,
-                        device_id: device.device_id,
-                        device_name: device.device_name,
-                        walletAddress: data.walletAddress,
-                        Temperature: weatherData['Temperature'],
-                        Humidity: weatherData['Humidity'],
-                        HeatIndex: weatherData['HeatIndex'],
-                        BarometricPressure: weatherData['BarometricPressure'],
-                    },
-                    { upsert: true }
-                );
-          
-                // const weatherRecord = new LacrosseData({
-                //     miner_key: data.miner_key,
-                //     username: data.email,
-                //     password: data.password,
-                //     device_id: device.device_id,
-                //     device_name: device.device_name,
-                //     walletAddress: data.walletAddress,
-                //     Temperature: weatherData['Temperature'],
-                //     Humidity: weatherData['Humidity'],
-                //     HeatIndex: weatherData['HeatIndex'],
-                //     BarometricPressure: weatherData['BarometricPressure'],
-                // });
+        await DeviceCredentials.findOneAndUpdate(
+            { miner_key: data.miner_key, type: 'lacrosse' },
+            { $set: { miner_key: data.miner_key, type: 'lacrosse', address: data.walletAddress, credentials: { email: data.email, password: data.password } } },
+            { upsert: true, new: true }
+        );
 
-                // await weatherRecord.save();
-                return res.status(200).send({
-                    message:
-                      "Successfully linked your La Crosse Technology to your wallet address!",
-                    status: "SUCCESS",
-                });
-            }
-        }
-
-        const notFoundResponse = {
-            message: "Temperature device not found.",
-            status: "ERROR",
-        };
-        console.log("Response:", notFoundResponse);
-        return res.status(404).send(notFoundResponse);
+        return res.status(200).send({
+            message: "Lacrosse credentials validated and saved.",
+            status: "SUCCESS",
+        });
 
     } catch (e: any) {
         let errorResponse;
@@ -184,63 +128,7 @@ async function lacrosseGetWeatherData(token: any, device: any) {
     return response.data[`ref.user-device.${device.device_id}`]['ai.ticks.1'].fields;
 }
 
-// Function to compare and store the data in history
-const fetchAndCompareData = async () => {
-    try {
-        console.log('___________________try')
-        const users = await LacrosseData.find();
-        for (const user of users) {
-            const { miner_key, username, password, walletAddress } = user;
-
-            const token = await lacrosseLogin(username, password);
-            const DataCollection = await getCollectionByMinerKey(miner_key);
-
-            //@ts-ignore
-            const weatherData = await lacrosseGetWeatherData(token, { device_id: user.device_id });
-            let newInfo;
-
-            if (Object.keys(weatherData).length === 0) {
-              newInfo = new DataCollection({
-                miner_key,
-                status: 'offline',
-                deviceDataString: null,
-                timestamp: new Date(),
-              });
-            } else {
-              const dataObject = {
-                data: {
-                  username,
-                  walletAddress,
-                  device_id: user.device_id,
-                  device_name: user.device_name,
-                  Temperature: weatherData['Temperature'],
-                  Humidity: weatherData['Humidity'],
-                  HeatIndex: weatherData['HeatIndex'],
-                  BarometricPressure: weatherData['BarometricPressure'],
-                },
-                metadata: {
-                  data_type: "Lacrosse"
-                }
-              }
-
-              newInfo = new DataCollection({
-                miner_key,
-                status: 'online',
-                deviceDataString: dataObject,
-                timestamp: new Date(),
-              });
-              
-            }
-
-            await newInfo.save();
-            console.log(`Historical data saved for user: ${username}`);
-        }
-    } catch (error: any) {
-        console.error("Error fetching or saving data:", error.message);
-    }
-};
-fetchAndCompareData()
-setInterval(fetchAndCompareData, 10 * 60 * 1000);
+// No scheduler in minimal API
 
 
 export default router;

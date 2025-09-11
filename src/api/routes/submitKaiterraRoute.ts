@@ -1,84 +1,14 @@
 import axios from "axios";
 import express, { Request, Response } from "express";
-import { getCollectionByMinerKey } from "../../db/models/data.js";
-import { DataItem, Point, RequestBody } from "types/kaiterraTypes.js";
-import { Kaiterra, KaiterraData } from "../../db/models/kaiterra_schema.js";
+import { DeviceCredentials } from "../../db/models/device_credentials.js";
 
 const router = express.Router();
 
-const fetchDataAndUpdate = async () => {
-  try {
-    const kaiterraDevices = await Kaiterra.find();
-
-    for (const device of kaiterraDevices) {
-      const { miner_key, deviceId, token, walletAddress } = device;
-
-      if (!miner_key)
-        continue;
-
-      const url = `https://api.kaiterra.cn/v1/devices/${deviceId}/top?key=${token}`;
-      const response = await axios.get(url);
-
-      const newData = response.data;
-      const mappedData = newData?.data?.map((item: DataItem) => ({
-        param: item.param,
-        units: item.units,
-        span: item.span,
-        points: item?.points?.map((point: Point) => ({
-          ts: new Date(point.ts),
-          value: point.value,
-        })),
-      }));
-
-      const existingData = await Kaiterra.findOne({ deviceId: newData.id });
-      const DataCollection = await getCollectionByMinerKey(miner_key);
-
-      if (
-        existingData &&
-        JSON.stringify(existingData.data) !== JSON.stringify(mappedData)
-      ) {
-        await Kaiterra.findOneAndUpdate(
-          { deviceId: newData.id },
-          {
-            token,
-            walletAddress,
-            data: mappedData,
-          },
-          { upsert: true }
-        );
-      }
-
-      const dataObject = {
-        deviceId: newData.id,
-        data: mappedData,
-        timestamp: new Date(),
-        metadata: {
-          data_type: "Kaiterra",
-        },
-      } as KaiterraData;
-
-      const data = new DataCollection({
-        miner_key,
-        status: Object.keys(newData.data).length === 0 ? 'offline' : 'online',
-        deviceDataString: dataObject,
-        timestamp: new Date(),
-      });
-
-      await data.save();
-    }
-    console.log("Kaiterra Data fetch and update completed.");
-  } catch (error) {
-    console.error("Error fetching or updating data:", error);
-  }
-};
-
-// Fetch data and update every 10 minutes
-fetchDataAndUpdate();
-setInterval(fetchDataAndUpdate, 10 * 60 * 1000);
+// Minimal: only credential validation
 
 router.post(
   "/api/submitKaiterra",
-  async (req: Request<{}, {}, RequestBody>, res: Response) => {
+  async (req: Request, res: Response) => {
     console.log(req.body, "____body");
     try {
       const { miner_key, token, deviceId, address } = req.body;
@@ -92,74 +22,18 @@ router.post(
           });
       }
 
-      // Check if the device already exists in the database
-      const existingDevice = await Kaiterra.findOne({ deviceId: deviceId });
-      if (existingDevice) {
-        const result = await Kaiterra.findOne({
-          deviceId: deviceId,
-        });
-
-        if (result?.miner_key !== miner_key) {
-          return res.status(409).send({
-              message: "ID already exists.",
-              status: "ERROR",
-          });
-        }
-      }
-      
       const url = `https://api.kaiterra.cn/v1/devices/${deviceId}/top?key=${token}`;
 
       try {
         const response = await axios.get(url);
-        const deviceData = response.data;
+        // valid
+        await DeviceCredentials.findOneAndUpdate(
+          { miner_key, type: 'kaiterra' },
+          { $set: { miner_key, type: 'kaiterra', address, credentials: { token, deviceId } } },
+          { upsert: true, new: true }
+        );
 
-        // Check and map the structure of data if needed
-        const mappedData = deviceData?.data?.map((item: any) => ({
-          param: item.param,
-          units: item.units,
-          span: item.span,
-          points: item?.points?.map((point: any) => ({
-            ts: new Date(point.ts),
-            value: point.value,
-          })),
-        }));
-
-        if (existingDevice) {
-          await Kaiterra.findOneAndUpdate(
-              { miner_key: miner_key },
-              { 
-                deviceId: deviceId,
-                token: token,
-                data: mappedData,
-              },
-              { upsert: false }
-          );
-  
-          return res.status(200).send({
-            message: "Updated Kaiterra Account Successful.",
-            status: "SUCCESS",
-          });
-        }
-
-        // Create a new document with the mapped data
-        const newData = new Kaiterra({
-          miner_key: miner_key,
-          deviceId: deviceId,
-          token: token,
-          walletAddress: address,
-          data: mappedData,
-          metadata: {
-            data_type: "Kaiterra",
-          },
-        });
-
-        await newData.save();
-
-        res.status(200).send({
-          message: "Device information retrieved successfully.",
-          status: "SUCCESS",
-          data: response.data,
-        });
+        res.status(200).send({ message: "Kaiterra credentials validated and saved.", status: "SUCCESS" });
       } catch (error: any) {
         return res.status(400).send({
           message: "Invalid API key or device ID.",

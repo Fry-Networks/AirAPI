@@ -1,11 +1,9 @@
 import express from "express";
 import axios from "axios";
 import UserAgent from 'user-agents';
-import { WXMAccount, WXMModel } from "../../db/models/air_accounts.js";
-import { getUserByAddress } from "../../db/models/users-schema.js";
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import 'dotenv/config';
-import { newApiKeyEvent } from "../../db/connect.js";
+import { DeviceCredentials } from "../../db/models/device_credentials.js";
 
 const router = express.Router();
 const proxy = process.env.PROXY;
@@ -32,24 +30,6 @@ router.post("/api/submitXMToken", async function (req, res) {
           const loginResponse:any =await proxyInstance.post('https://api.weatherxm.com/api/v1/auth/login',{username:data.username, password:data.password}, {
             headers: headers,
           })
-        // console.log(loginResponse);
-        // Check if the token is already in the database
-        const existingKey = await WXMModel.exists({
-          refresh_token: loginResponse.data.refreshToken,
-        });
-  
-        if (existingKey) {
-            const result: WXMAccount | null = await WXMModel.findOne({
-              refresh_token: loginResponse.data.refreshToken,
-            });
-    
-            if (result?.miner_key !== data.miner_key) {
-                return res.status(409).send({
-                    message: "Token already exists in database.",
-                    status: "ERROR",
-                });
-            }
-        }
 
         // Check if the key is valid by making a request to the API
         //https://rt.ambientweather.net/v1/devices?applicationKey=&apiKey=
@@ -70,46 +50,12 @@ router.post("/api/submitXMToken", async function (req, res) {
             status: "ERROR",
           });
         }
-
-        if (existingKey) {
-          await WXMModel.findOneAndUpdate(
-              { miner_key: data.miner_key },
-              { 
-                username: data.username,
-                password: data.password,
-                token: loginResponse.data.token,
-                refresh_token: loginResponse.data.refreshToken,
-                timestamp: new Date(),
-              },
-              { upsert: false }
-          );
-
-          return res.status(200).send({
-            message: "Updated XM Token Successful.",
-            status: "SUCCESS",
-          });
-        }
-        // Add the key to the database
-        const user = await getUserByAddress(data.address);
-    
-        const key = new WXMModel({
-          miner_key: data.miner_key,
-          walletAddress: data.address,
-          api_type:'Weather-xm',
-          username: data.username,
-          password: data.password,
-          token: loginResponse.data.token,
-          refresh_token: loginResponse.data.refreshToken,
-          user_id: user._id,
-          timestamp: new Date(),
-        });
-        await key.save();
-        newApiKeyEvent.emit("newApiKey", key._id);
-        res.status(200).send({
-          message:
-            "Successfully linked your Token to your wallet address!\nWe will soon begin to retreive data from your weather stations/devices.",
-          status: "SUCCESS",
-        });
+        await DeviceCredentials.findOneAndUpdate(
+          { miner_key: data.miner_key, type: 'weatherxm' },
+          { $set: { miner_key: data.miner_key, type: 'weatherxm', address: data.address, credentials: { username: data.username, password: data.password, token: loginResponse.data.token, refresh_token: loginResponse.data.refreshToken } } },
+          { upsert: true, new: true }
+        );
+        res.status(200).send({ message: "WeatherXM credentials validated and saved.", status: "SUCCESS" });
         } catch (error:any) {
           console.log(error);
           res.status(400).send({
