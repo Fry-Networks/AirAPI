@@ -18,8 +18,36 @@ import { WXMModel } from "../../db/models/air_accounts.js";
 import { RtspLink } from '../../db/models/rtsp_schema.js';
 import { HardwareAccount } from "../../db/models/hardware_schema.js";
 import { NodeAccount } from "../../db/models/node_schema.js";
+import { getUserByAddress } from "../../db/models/users-schema.js";
 
 const router = express.Router();
+
+// This endpoint returns stored device/account records - which can include
+// third-party cloud API keys/secrets and wallet addresses - keyed only by
+// miner_key. miner_key is a device identifier (not a secret: it is a
+// short, structured, human-readable string), so without an ownership
+// check anyone who can guess/enumerate a miner_key could read another
+// user's credentials. `address` was already part of this endpoint's
+// request contract (declared below) but was never checked; every doc
+// here is linked to an owner via `user_id`, `walletAddress`, or
+// `address`, so we verify the caller's `address` matches before
+// returning the record. `gmcmap` records track no owner in this schema
+// and hold only public radiation-map readings, so that branch is left
+// as before.
+async function isOwnedByAddress(doc: any, address: string): Promise<boolean> {
+  if (!doc || !address) return false;
+  if (doc.user_id) {
+    const user = await getUserByAddress(address);
+    return String(doc.user_id) === String(user._id);
+  }
+  if (typeof doc.walletAddress === "string") {
+    return doc.walletAddress.toLowerCase() === address.toLowerCase();
+  }
+  if (typeof doc.address === "string") {
+    return doc.address.toLowerCase() === address.toLowerCase();
+  }
+  return false;
+}
 
 router.post("/api/getDeviceCredential", async function (req, res) {
     try {
@@ -32,11 +60,15 @@ router.post("/api/getDeviceCredential", async function (req, res) {
 
         const miner_key = data.miner_key;
         const type = data.type;
+        const address = data.address;
         // Check if the key is already in the database
         if (type === 'ambient') {
           const existingKey = await AmbientModel.exists({ miner_key });
           if (existingKey) {
             const doc = await AmbientModel.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -45,6 +77,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await Atmotube.exists({ miner_key });
           if (existingKey) {
             const doc = await Atmotube.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -53,6 +88,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await Awair.exists({ miner_key });
           if (existingKey) {
             const doc = await Awair.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -61,6 +99,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await EcowittModel.exists({ miner_key });
           if (existingKey) {
             const doc = await EcowittModel.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -69,6 +110,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await GoveeAccount.exists({ miner_key });
           if (existingKey) {
             const doc = await GoveeAccount.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -85,6 +129,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await IopoolAccountModel.exists({ miner_key });
           if (existingKey) {
             const doc = await IopoolAccountModel.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -93,6 +140,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await Kaiterra.exists({ miner_key });
           if (existingKey) {
             const doc = await Kaiterra.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -101,6 +151,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await LacrosseData.exists({ miner_key });
           if (existingKey) {
             const doc = await LacrosseData.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -109,6 +162,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await Nrf.exists({ miner_key });
           if (existingKey) {
             const doc = await Nrf.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -117,6 +173,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await PebbleModel.exists({ miner_key });
           if (existingKey) {
             const doc = await PebbleModel.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -125,6 +184,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await PurpleAirModel.exists({ miner_key });
           if (existingKey) {
             const doc = await PurpleAirModel.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -133,6 +195,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await SenseCAPAccount.exists({ miner_key });
           if (existingKey) {
             const doc = await SenseCAPAccount.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -141,6 +206,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await ShellyModel.exists({ minerKey: miner_key });
           if (existingKey) {
             const doc = await ShellyModel.findOne({ minerKey: miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -149,6 +217,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await TapoModel.exists({ miner_key });
           if (existingKey) {
             const doc = await TapoModel.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -157,6 +228,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await WXMModel.exists({ miner_key });
           if (existingKey) {
             const doc = await WXMModel.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -165,6 +239,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await HardwareAccount.exists({ miner_key });
           if (existingKey) {
             const doc = await HardwareAccount.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -173,6 +250,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
           const existingKey = await NodeAccount.exists({ miner_key });
           if (existingKey) {
             const doc = await NodeAccount.findOne({ miner_key });
+            if (!(await isOwnedByAddress(doc, address))) {
+              return void res.status(200).send({ data: null });
+            }
             return void res.status(200).send({
               data: doc
             });
@@ -182,6 +262,9 @@ router.post("/api/getDeviceCredential", async function (req, res) {
             const existingKey = await RtspLink.exists({ minerKey: miner_key });
             if (existingKey) {
               const doc = await RtspLink.findOne({ minerKey: miner_key });
+              if (!(await isOwnedByAddress(doc, address))) {
+                return void res.status(200).send({ data: null });
+              }
               return void res.status(200).send({
                 data: doc
               });
